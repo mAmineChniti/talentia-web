@@ -32,10 +32,13 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { useI18n } from '@/components/i18n-provider';
+import { useSession } from '@/hooks/use-session';
+import { canAccessRoute } from '@/lib/rbac';
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { dict, lang } = useI18n();
+  const { user } = useSession();
   const s = dict.sidebar;
 
   const navMain: {
@@ -104,7 +107,15 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        {navMain.map((group) => (
+        {navMain
+          .map((group) => ({
+            ...group,
+            items: group.items.filter((item) =>
+              canAccessRoute(user?.role, item.url)
+            ),
+          }))
+          .filter((group) => group.items.length > 0)
+          .map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarGroupContent>

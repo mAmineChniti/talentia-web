@@ -23,6 +23,7 @@ import { authApi } from '@/lib/services/auth';
 import { fullName, initials } from '@/lib/format';
 import { useI18n } from '@/components/i18n-provider';
 import { toast } from 'sonner';
+import { deleteSessionCookie } from '@/actions/cookies';
 
 export function AppHeader({
   user,
@@ -60,7 +61,8 @@ export function AppHeader({
 
   const logoutMutation = useApiMutation<void, string>(() => authApi.logout(), {
     invalidate: [['session.me'], ['session.user']],
-    onSuccess: () => {
+    onSuccess: async () => {
+      await deleteSessionCookie();
       toast.success(h.logoutSuccess);
       router.push(`/${lang}/login`);
     },

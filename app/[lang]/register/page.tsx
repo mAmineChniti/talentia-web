@@ -31,6 +31,7 @@ import {
 import { SiteHeader } from '@/components/site-header';
 import { useI18n } from '@/components/i18n-provider';
 import { toast } from 'sonner';
+import { setSessionCookie } from '@/actions/cookies';
 
 type RegisterFormValues = z.infer<ReturnType<typeof createRegisterSchema>>;
 
@@ -61,7 +62,13 @@ export default function RegisterPage() {
     },
     {
       invalidate: [['session.me'], ['session.user']],
-      onSuccess: () => {
+      onSuccess: async (res) => {
+        await setSessionCookie({
+          id: res.id,
+          name: res.name,
+          email: res.email,
+          role: res.role,
+        });
         toast.success(t.success);
         router.replace(`/${lang}/dashboard`);
       },

@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/field';
 import { SiteHeader } from '@/components/site-header';
 import { useI18n } from '@/components/i18n-provider';
+import { setSessionCookie } from '@/actions/cookies';
 import { toast } from 'sonner';
 
 type LoginFormValues = z.infer<ReturnType<typeof createLoginSchema>>;
@@ -46,8 +47,15 @@ export default function LoginPage() {
     (values) => authApi.login(values),
     {
       invalidate: [['session.me'], ['session.user']],
-      onSuccess: (res) => {
+      onSuccess: async (res) => {
         toast.success(t.welcome.split('{name}').join(res.name));
+
+        await setSessionCookie({
+          id: res.id,
+          name: res.name,
+          email: res.email,
+          role: res.role,
+        });
 
         const params = new URLSearchParams(location.search);
         const from = params.get('from');

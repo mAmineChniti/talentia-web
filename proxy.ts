@@ -7,6 +7,7 @@ import Negotiator from 'negotiator';
 
 const SESSION_COOKIE = 'JSESSIONID';
 const LANG_COOKIE = 'preferred-locale';
+const USER_COOKIE = 'session-user';
 
 const PROTECTED_PREFIXES = [
   '/dashboard',
@@ -19,6 +20,18 @@ const PROTECTED_PREFIXES = [
   '/trainings',
   '/recruitment',
 ];
+
+const ROUTE_ROLES: Record<string, string[]> = {
+  dashboard: ['USER', 'HR', 'ADMIN'],
+  employees: ['HR', 'ADMIN'],
+  attendance: ['HR', 'ADMIN'],
+  leaves: ['USER', 'HR', 'ADMIN'],
+  contracts: ['HR', 'ADMIN'],
+  payroll: ['ADMIN'],
+  payslips: ['ADMIN'],
+  trainings: ['USER', 'HR', 'ADMIN'],
+  recruitment: ['HR', 'ADMIN'],
+};
 
 function getLocale(request: NextRequest): Locale {
   const negotiatorHeaders: Record<string, string> = {};
@@ -91,6 +104,32 @@ export function proxy(request: NextRequest) {
     loginUrl.search = '';
     loginUrl.searchParams.set('from', pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (session) {
+    const raw = request.cookies.get(USER_COOKIE)?.value;
+    let role: string | undefined;
+    if (raw) {
+      try {
+        role = (JSON.parse(raw) as { role: string }).role;
+      } catch {
+        // invalid cookie, ignore
+      }
+    }
+    const relative =
+      pathname === `/${locale}`
+        ? '/'
+        : pathname.startsWith(`/${locale}/`)
+          ? pathname.slice(`/${locale}`.length)
+          : pathname;
+    const segment = relative.split('/').filter(Boolean)[0];
+    const allowed = segment ? ROUTE_ROLES[segment] : undefined;
+
+    if (allowed && role && !allowed.includes(role)) {
+      const dashUrl = request.nextUrl.clone();
+      dashUrl.pathname = `/${locale}/dashboard`;
+      return NextResponse.redirect(dashUrl);
+    }
   }
 
   // If URL has locale, update cookie preference to match

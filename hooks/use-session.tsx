@@ -5,9 +5,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { usePathname, useRouter } from 'next/navigation';
 
-import { authApi } from '@/lib/services/auth';
 import { usersApi } from '@/lib/services/users';
 import type { User } from '@/lib/types/users';
+import type { SessionUser } from '@/actions/cookies';
 
 interface Session {
   userId: number | undefined;
@@ -23,32 +23,37 @@ const SessionContext = React.createContext<Session>({
   refresh: () => {},
 });
 
-const SESSION_ME_KEY = ['api', 'session.me'] as const;
 const SESSION_USER_KEY = ['api', 'session.user'] as const;
 
-export function SessionProvider({ children }: { children: React.ReactNode }) {
+export function SessionProvider({
+  children,
+  initialSession,
+}: {
+  children: React.ReactNode;
+  initialSession: SessionUser | null;
+}) {
   const queryClient = useQueryClient();
 
-  const meQuery = useQuery({
-    queryKey: [...SESSION_ME_KEY],
-    queryFn: async () => {
-      return (await authApi.me()) ?? '';
-    },
-  });
-
-  const userId = meQuery.data === '' ? undefined : meQuery.data;
+  const userId = initialSession?.id;
 
   const userQuery = useQuery({
     queryKey: [...SESSION_USER_KEY, userId],
     queryFn: () => usersApi.get(userId as number),
     enabled: userId !== undefined,
+    initialData: initialSession
+      ? {
+          id: initialSession.id,
+          name: initialSession.name,
+          email: initialSession.email,
+          role: initialSession.role,
+          lastname: '',
+        }
+      : undefined,
   });
 
-  const isLoading =
-    meQuery.isPending || (userId !== undefined && userQuery.isPending);
+  const isLoading = userId !== undefined && userQuery.isPending;
 
   const refresh = React.useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: [...SESSION_ME_KEY] });
     void queryClient.invalidateQueries({ queryKey: [...SESSION_USER_KEY] });
   }, [queryClient]);
 

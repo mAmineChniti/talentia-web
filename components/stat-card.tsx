@@ -27,11 +27,11 @@ export function StatCard({
   };
 
   return (
-    <Card className={cn('py-0 rounded-lg', className)}>
-      <CardContent className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1.5">
+    <Card className="py-0 rounded-sm">
+      <CardContent className="flex items-center justify-between gap-3 py-4">
+        <div className="min-w-0 space-y-1">
           <p className="text-muted-foreground truncate text-sm">{label}</p>
-          <p className="text-2xl font-semibold tracking-tight">{value}</p>
+          <p className="text-2xl font-semibold tracking-tight leading-tight">{value}</p>
           {hint && (
             <p className="text-muted-foreground truncate text-xs">{hint}</p>
           )}
@@ -39,7 +39,7 @@ export function StatCard({
         {icon && (
           <div
             className={cn(
-              'flex size-10 shrink-0 items-center justify-center rounded-lg',
+              'flex size-10 shrink-0 items-center justify-center rounded-sm',
               accentClasses[accent]
             )}
           >
