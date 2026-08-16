@@ -19,7 +19,10 @@ const ROUTE_ROLES: Record<string, Role[]> = {
   profile: ['USER', 'HR', 'ADMIN'],
 };
 
-export function canAccessRoute(role: Role | undefined, pathname: string): boolean {
+export function canAccessRoute(
+  role: Role | undefined,
+  pathname: string
+): boolean {
   if (!role) return false;
 
   const segment = pathname.split('/').filter(Boolean).slice(1).find(Boolean);
@@ -31,7 +34,12 @@ export function canAccessRoute(role: Role | undefined, pathname: string): boolea
   return allowed.includes(role);
 }
 
-export function hasMinimumRole(userRole: Role | undefined, required: Role): boolean {
+export function hasMinimumRole(
+  userRole: Role | undefined,
+  required: Role
+): boolean {
   if (!userRole) return false;
-  return (ROLE_HIERARCHY[userRole] ?? -1) >= (ROLE_HIERARCHY[required] ?? Infinity);
+  return (
+    (ROLE_HIERARCHY[userRole] ?? -1) >= (ROLE_HIERARCHY[required] ?? Infinity)
+  );
 }

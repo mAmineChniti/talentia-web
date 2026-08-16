@@ -122,7 +122,7 @@ export function proxy(request: NextRequest) {
         : pathname.startsWith(`/${locale}/`)
           ? pathname.slice(`/${locale}`.length)
           : pathname;
-    const segment = relative.split('/').filter(Boolean)[0];
+    const segment = relative.split('/').find(Boolean);
     const allowed = segment ? ROUTE_ROLES[segment] : undefined;
 
     if (allowed && role && !allowed.includes(role)) {
@@ -133,13 +133,17 @@ export function proxy(request: NextRequest) {
   }
 
   // If URL has locale, update cookie preference to match
-  const response = NextResponse.next();
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-locale', locale);
+  requestHeaders.set('x-pathname', pathname);
+
+  const response = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
   response.cookies.set(LANG_COOKIE, locale, {
     path: '/',
     maxAge: 31_536_000, // 1 year
   });
-  response.headers.set('x-locale', locale);
-  response.headers.set('x-pathname', pathname);
   return response;
 }
 

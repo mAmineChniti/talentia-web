@@ -9,7 +9,7 @@ export function StatCard({
   icon,
   hint,
   accent = 'primary',
-  className,
+  className: _className,
 }: {
   label: string;
   value: React.ReactNode;
@@ -27,11 +27,13 @@ export function StatCard({
   };
 
   return (
-    <Card className="py-0 rounded-sm">
+    <Card className="rounded-sm py-0">
       <CardContent className="flex items-center justify-between gap-3 py-4">
         <div className="min-w-0 space-y-1">
           <p className="text-muted-foreground truncate text-sm">{label}</p>
-          <p className="text-2xl font-semibold tracking-tight leading-tight">{value}</p>
+          <p className="text-2xl leading-tight font-semibold tracking-tight">
+            {value}
+          </p>
           {hint && (
             <p className="text-muted-foreground truncate text-xs">{hint}</p>
           )}

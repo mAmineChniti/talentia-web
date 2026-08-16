@@ -238,7 +238,7 @@ export default function ProfilePage() {
                         {...field}
                         id="profile-aboutme"
                         placeholder={t.placeholders.aboutme}
-                        className="min-h-24 bg-background border-border"
+                        className="bg-background border-border min-h-24"
                       />
                     )}
                   />

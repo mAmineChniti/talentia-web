@@ -116,35 +116,35 @@ export function AppSidebar() {
           }))
           .filter((group) => group.items.length > 0)
           .map((group) => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map((item) => {
-                  const title = item.title;
-                  const isActive =
-                    pathname === item.url ||
-                    pathname?.startsWith(`${item.url}/`);
-                  return (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={isActive}
-                        tooltip={title}
-                        data-active={isActive || undefined}
-                      >
-                        <Link href={item.url}>
-                          <item.icon />
-                          <span>{title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+            <SidebarGroup key={group.label}>
+              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {group.items.map((item) => {
+                    const title = item.title;
+                    const isActive =
+                      pathname === item.url ||
+                      pathname?.startsWith(`${item.url}/`);
+                    return (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive}
+                          tooltip={title}
+                          data-active={isActive || undefined}
+                        >
+                          <Link href={item.url}>
+                            <item.icon />
+                            <span>{title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
       </SidebarContent>
       <SidebarFooter>
         <div className="text-muted-foreground flex items-center gap-2 px-2 py-1 text-[11px]">

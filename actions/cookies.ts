@@ -37,13 +37,13 @@ export async function deleteSessionCookie() {
   cookieStore.set(SESSION_COOKIE, '', { maxAge: 0 });
 }
 
-export async function getSessionCookie(): Promise<SessionUser | null> {
+export async function getSessionCookie(): Promise<SessionUser | undefined> {
   const cookieStore = await cookies();
   const raw = cookieStore.get(SESSION_COOKIE)?.value;
-  if (!raw) return null;
+  if (!raw) return undefined;
   try {
     return JSON.parse(raw) as SessionUser;
   } catch {
-    return null;
+    return undefined;
   }
 }

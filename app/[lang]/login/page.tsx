@@ -47,23 +47,25 @@ export default function LoginPage() {
     (values) => authApi.login(values),
     {
       invalidate: [['session.me'], ['session.user']],
-      onSuccess: async (res) => {
-        toast.success(t.welcome.split('{name}').join(res.name));
+      onSuccess: (res) => {
+        void (async () => {
+          toast.success(t.welcome.split('{name}').join(res.name));
 
-        await setSessionCookie({
-          id: res.id,
-          name: res.name,
-          email: res.email,
-          role: res.role,
-        });
+          await setSessionCookie({
+            id: res.id,
+            name: res.name,
+            email: res.email,
+            role: res.role,
+          });
 
-        const params = new URLSearchParams(location.search);
-        const from = params.get('from');
-        const target =
-          from && from.startsWith('/') && !from.startsWith('//')
-            ? from
-            : `/${lang}/dashboard`;
-        router.replace(target);
+          const params = new URLSearchParams(location.search);
+          const from = params.get('from');
+          const target =
+            from && from.startsWith('/') && !from.startsWith('//')
+              ? from
+              : `/${lang}/dashboard`;
+          router.push(target);
+        })();
       },
       onError: (err) => toast.error(err.message),
     }

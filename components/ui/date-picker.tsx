@@ -79,7 +79,9 @@ export function DatePicker({
           )}
           dir={dir}
         >
-          <CalendarIcon className={cn(dir === 'rtl' ? 'ml-2' : 'mr-2', 'size-4')} />
+          <CalendarIcon
+            className={cn(dir === 'rtl' ? 'ml-2' : 'mr-2', 'size-4')}
+          />
           {date ? (
             format(date, 'PPP', { locale: dateFnsLocale as any })
           ) : (
@@ -152,7 +154,9 @@ export function DatePickerRange({
           )}
           dir={dir}
         >
-          <CalendarIcon className={cn(dir === 'rtl' ? 'ml-2' : 'mr-2', 'size-4')} />
+          <CalendarIcon
+            className={cn(dir === 'rtl' ? 'ml-2' : 'mr-2', 'size-4')}
+          />
           {dateRange?.from ? (
             dateRange.to ? (
               <>
@@ -270,7 +274,9 @@ export function DateTimePicker({
             )}
             dir={dir}
           >
-            <CalendarIcon className={cn(dir === 'rtl' ? 'ml-2' : 'mr-2', 'size-4')} />
+            <CalendarIcon
+              className={cn(dir === 'rtl' ? 'ml-2' : 'mr-2', 'size-4')}
+            />
             {formatDateTimeDisplay(date)}
           </Button>
         </PopoverTrigger>

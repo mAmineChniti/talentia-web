@@ -61,10 +61,19 @@ export function AppHeader({
 
   const logoutMutation = useApiMutation<void, string>(() => authApi.logout(), {
     invalidate: [['session.me'], ['session.user']],
-    onSuccess: async () => {
-      await deleteSessionCookie();
-      toast.success(h.logoutSuccess);
-      router.push(`/${lang}/login`);
+    onSuccess: () => {
+      void (async () => {
+        await deleteSessionCookie();
+        toast.success(h.logoutSuccess);
+        router.push(`/${lang}/login`);
+      })();
+    },
+    onError: () => {
+      void (async () => {
+        await deleteSessionCookie();
+        toast.success(h.logoutSuccess);
+        router.push(`/${lang}/login`);
+      })();
     },
   });
 

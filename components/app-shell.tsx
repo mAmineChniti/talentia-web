@@ -38,7 +38,7 @@ export function AppShell({
   initialSession,
 }: {
   children: React.ReactNode;
-  initialSession: SessionUser | null;
+  initialSession: SessionUser | undefined;
 }) {
   return (
     <SessionProvider initialSession={initialSession}>

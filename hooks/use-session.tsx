@@ -30,7 +30,7 @@ export function SessionProvider({
   initialSession,
 }: {
   children: React.ReactNode;
-  initialSession: SessionUser | null;
+  initialSession: SessionUser | undefined;
 }) {
   const queryClient = useQueryClient();
 

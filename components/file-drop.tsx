@@ -105,7 +105,7 @@ export function FileDrop({
                 type="button"
                 variant="destructive"
                 size="icon"
-                className="absolute -top-2 -right-2 size-6 opacity-0 transition-opacity group-hover:opacity-100 hover:!bg-destructive hover:!text-white"
+                className="hover:!bg-destructive absolute -top-2 -right-2 size-6 opacity-0 transition-opacity group-hover:opacity-100 hover:!text-white"
                 onClick={handleClear}
               >
                 <X className="size-3" />

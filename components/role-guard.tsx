@@ -26,9 +26,5 @@ export function RoleGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!canAccessRoute(user?.role, pathname)) {
-    return null;
-  }
-
   return <>{children}</>;
 }

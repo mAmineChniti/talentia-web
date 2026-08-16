@@ -62,15 +62,17 @@ export default function RegisterPage() {
     },
     {
       invalidate: [['session.me'], ['session.user']],
-      onSuccess: async (res) => {
-        await setSessionCookie({
-          id: res.id,
-          name: res.name,
-          email: res.email,
-          role: res.role,
-        });
-        toast.success(t.success);
-        router.replace(`/${lang}/dashboard`);
+      onSuccess: (res) => {
+        void (async () => {
+          await setSessionCookie({
+            id: res.id,
+            name: res.name,
+            email: res.email,
+            role: res.role,
+          });
+          toast.success(t.success);
+          router.replace(`/${lang}/dashboard`);
+        })();
       },
       onError: (error) => {
         toast.error(Error.isError(error) ? error.message : t.createError);
