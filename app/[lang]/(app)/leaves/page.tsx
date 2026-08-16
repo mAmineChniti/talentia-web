@@ -131,7 +131,7 @@ export default function LeavesPage() {
         />
       </div>
 
-      <Card className="py-0">
+      <Card className="rounded-lg py-0">
         <CardContent className="space-y-4 py-4">
           <Tabs value={tab} onValueChange={setTab}>
             <TabsList>

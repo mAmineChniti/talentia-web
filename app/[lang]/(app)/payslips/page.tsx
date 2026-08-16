@@ -120,7 +120,7 @@ export default function PayslipsPage() {
         />
       </div>
 
-      <Card className="py-0">
+      <Card className="rounded-lg py-0">
         <CardContent className="py-4">
           {error ? (
             <ErrorState onRetry={refetch} description={error.message} />

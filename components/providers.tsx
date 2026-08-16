@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { ThemeProvider } from '@/components/theme-provider';
 import { I18nProvider } from '@/components/i18n-provider';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import type { Dictionary } from '@/get-dictionary';
 import type { Locale } from '@/i18n-config';
 
@@ -43,7 +44,7 @@ export function Providers({
     >
       <QueryClientProvider client={client}>
         <I18nProvider lang={lang} dir={dir} dict={dict}>
-          {children}
+          <TooltipProvider>{children}</TooltipProvider>
         </I18nProvider>
       </QueryClientProvider>
     </ThemeProvider>

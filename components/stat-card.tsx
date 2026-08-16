@@ -27,7 +27,7 @@ export function StatCard({
   };
 
   return (
-    <Card className={cn('py-0', className)}>
+    <Card className={cn('py-0 rounded-lg', className)}>
       <CardContent className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1.5">
           <p className="text-muted-foreground truncate text-sm">{label}</p>

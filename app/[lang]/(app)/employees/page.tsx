@@ -109,7 +109,7 @@ export default function EmployeesPage() {
         actions={<AddEmployeeDialog users={users.data ?? []} />}
       />
 
-      <Card className="py-0">
+      <Card className="rounded-lg py-0">
         <CardContent className="space-y-4 py-4">
           <div className="flex items-center gap-3">
             <Input

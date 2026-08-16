@@ -77,7 +77,7 @@ export default function ProfilePage() {
       <PageHeader title={t.title} description={t.description} />
 
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[280px_1fr]">
-        <Card>
+        <Card className="rounded-lg">
           <CardContent className="flex flex-col items-center gap-4 pt-2 text-center">
             <Avatar className="size-24">
               <AvatarImage
@@ -112,7 +112,7 @@ export default function ProfilePage() {
           )}
           className="grid gap-6"
         >
-          <Card>
+          <Card className="rounded-lg">
             <CardHeader>
               <CardTitle>{t.personal}</CardTitle>
               <CardDescription>{t.personalHint}</CardDescription>
@@ -168,7 +168,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-lg">
             <CardHeader>
               <CardTitle>{t.professional}</CardTitle>
               <CardDescription>{t.professionalHint}</CardDescription>
@@ -238,7 +238,7 @@ export default function ProfilePage() {
                         {...field}
                         id="profile-aboutme"
                         placeholder={t.placeholders.aboutme}
-                        className="min-h-24"
+                        className="min-h-24 bg-background border-border"
                       />
                     )}
                   />
@@ -247,7 +247,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-lg">
             <CardHeader>
               <CardTitle>{t.security}</CardTitle>
               <CardDescription>{t.securityHint}</CardDescription>
@@ -366,6 +366,7 @@ function TextController({
             type={type}
             placeholder={placeholder}
             aria-invalid={fieldState.invalid}
+            className="bg-background border-border"
           />
           {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
         </Field>

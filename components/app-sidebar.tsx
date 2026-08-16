@@ -31,7 +31,6 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { cn } from '@/lib/utils';
 import { useI18n } from '@/components/i18n-provider';
 
 export function AppSidebar() {
@@ -121,10 +120,7 @@ export function AppSidebar() {
                         asChild
                         isActive={isActive}
                         tooltip={title}
-                        className={cn(
-                          isActive &&
-                            'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                        )}
+                        data-active={isActive || undefined}
                       >
                         <Link href={item.url}>
                           <item.icon />

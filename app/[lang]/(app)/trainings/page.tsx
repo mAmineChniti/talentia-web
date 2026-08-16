@@ -199,7 +199,7 @@ function TrainingCard({
   );
 
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col rounded-lg">
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div>

@@ -226,7 +226,7 @@ function ApplicationCard({ app }: { app: ApplicationResponse }) {
     REFUSER: t.refuse,
   };
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col rounded-lg">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -321,7 +321,7 @@ function InterviewsView({
           }
         />
       ) : (
-        <Card className="py-0">
+        <Card className="rounded-lg py-0">
           <CardContent className="py-4">
             <div className="overflow-x-auto">
               <Table>

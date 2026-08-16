@@ -202,7 +202,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Payroll trend */}
-        <Card className="lg:col-span-2">
+        <Card className="rounded-lg lg:col-span-2">
           <CardHeader>
             <CardTitle>{t.payrollTrend}</CardTitle>
             <CardDescription>{t.payrollTrendDesc}</CardDescription>
@@ -254,7 +254,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Attendance today */}
-        <Card>
+        <Card className="rounded-lg">
           <CardHeader>
             <CardTitle>{t.attendanceToday}</CardTitle>
             <CardDescription className="flex items-center gap-1.5">
@@ -305,7 +305,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Department distribution */}
-        <Card>
+        <Card className="rounded-lg">
           <CardHeader>
             <CardTitle>{t.byDepartment}</CardTitle>
             <CardDescription>{t.byDepartmentDesc}</CardDescription>
@@ -364,7 +364,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Pending leaves */}
-        <Card className="lg:col-span-2">
+        <Card className="rounded-lg lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <div>
               <CardTitle>{t.recentLeaveRequests}</CardTitle>

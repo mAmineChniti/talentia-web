@@ -2,6 +2,14 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+    ],
+  },
   async rewrites() {
     // Reverse proxy: `/backend-api/*` -> Spring Boot's `/api/*` on the same
     // origin, so the browser never makes cross-origin requests (no CORS) and

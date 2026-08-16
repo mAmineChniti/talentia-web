@@ -53,6 +53,7 @@ export function proxy(request: NextRequest) {
     pathname.includes('.') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
+    pathname.startsWith('/backend-api') ||
     pathname === '/favicon.ico' ||
     pathname === '/robots.txt' ||
     pathname === '/sitemap.xml'
@@ -105,6 +106,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
+    '/((?!api|_next/static|_next/image|backend-api|favicon.ico|robots.txt|sitemap.xml).*)',
   ],
 };
