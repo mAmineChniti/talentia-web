@@ -32,14 +32,15 @@ export function LanguageSwitcher() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleLocaleClick = async (locale: Locale) => {
-    await setLocale(locale);
+  const handleLocaleClick = (locale: Locale) => {
+    void setLocale(locale);
 
     const segments = pathname.split('/').filter(Boolean);
     const firstSegment = segments[0];
     const rest = isLocale(firstSegment) ? segments.slice(1) : segments;
     const path = rest.length > 0 ? `/${rest.join('/')}` : '';
     router.push(`/${locale}${path}`);
+    router.refresh();
   };
 
   return (

@@ -18,7 +18,12 @@ const dictionaries: Record<Locale, () => Promise<DictionaryContent>> = {
   },
 };
 
-export const getDictionary = async (locale: Locale) =>
-  dictionaries[locale]?.() ?? dictionaries.fr();
+export const getDictionary = async (locale: Locale) => {
+  const dictLoader = dictionaries[locale];
+  if (!dictLoader) {
+    return dictionaries.fr();
+  }
+  return dictLoader();
+};
 
 export type Dictionary = DictionaryContent;
