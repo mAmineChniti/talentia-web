@@ -68,26 +68,28 @@ export function DatePicker({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          id={id}
-          className={cn(
-            'w-full justify-start text-start font-normal',
-            !date && 'text-muted-foreground',
-            className
-          )}
-          dir={dir}
-        >
-          <CalendarIcon
-            className={cn(dir === 'rtl' ? 'ml-2' : 'mr-2', 'size-4')}
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            id={id}
+            className={cn(
+              'w-full justify-start text-start font-normal',
+              !date && 'text-muted-foreground',
+              className
+            )}
+            dir={dir}
           />
-          {date ? (
-            format(date, 'PPP', { locale: dateFnsLocale as any })
-          ) : (
-            <span>{placeholder}</span>
-          )}
-        </Button>
+        }
+      >
+        <CalendarIcon
+          className={cn(dir === 'rtl' ? 'ms-2' : 'me-2', 'size-4')}
+        />
+        {date ? (
+          format(date, 'PPP', { locale: dateFnsLocale as any })
+        ) : (
+          <span>{placeholder}</span>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start" dir={dir}>
         <Calendar
@@ -143,40 +145,42 @@ export function DatePickerRange({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          id={id}
-          className={cn(
-            'w-full justify-start text-start font-normal',
-            !dateRange?.from && 'text-muted-foreground',
-            className
-          )}
-          dir={dir}
-        >
-          <CalendarIcon
-            className={cn(dir === 'rtl' ? 'ml-2' : 'mr-2', 'size-4')}
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            id={id}
+            className={cn(
+              'w-full justify-start text-start font-normal',
+              !dateRange?.from && 'text-muted-foreground',
+              className
+            )}
+            dir={dir}
           />
-          {dateRange?.from ? (
-            dateRange.to ? (
-              <>
-                {format(dateRange.from, 'LLL dd, y', {
-                  locale: dateFnsLocale as Locale,
-                })}{' '}
-                -{' '}
-                {format(dateRange.to, 'LLL dd, y', {
-                  locale: dateFnsLocale as Locale,
-                })}
-              </>
-            ) : (
-              format(dateRange.from, 'LLL dd, y', {
+        }
+      >
+        <CalendarIcon
+          className={cn(dir === 'rtl' ? 'ms-2' : 'me-2', 'size-4')}
+        />
+        {dateRange?.from ? (
+          dateRange.to ? (
+            <>
+              {format(dateRange.from, 'LLL dd, y', {
                 locale: dateFnsLocale as Locale,
-              })
-            )
+              })}{' '}
+              -{' '}
+              {format(dateRange.to, 'LLL dd, y', {
+                locale: dateFnsLocale as Locale,
+              })}
+            </>
           ) : (
-            <span>{placeholder}</span>
-          )}
-        </Button>
+            format(dateRange.from, 'LLL dd, y', {
+              locale: dateFnsLocale as Locale,
+            })
+          )
+        ) : (
+          <span>{placeholder}</span>
+        )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start" dir={dir}>
         <Calendar
@@ -264,21 +268,23 @@ export function DateTimePicker({
   return (
     <div className={cn('flex gap-2', className)} dir={dir}>
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            id={id}
-            className={cn(
-              'flex-1 justify-start text-start font-normal',
-              !date && 'text-muted-foreground'
-            )}
-            dir={dir}
-          >
-            <CalendarIcon
-              className={cn(dir === 'rtl' ? 'ml-2' : 'mr-2', 'size-4')}
+        <PopoverTrigger
+          render={
+            <Button
+              variant="outline"
+              id={id}
+              className={cn(
+                'flex-1 justify-start text-start font-normal',
+                !date && 'text-muted-foreground'
+              )}
+              dir={dir}
             />
-            {formatDateTimeDisplay(date)}
-          </Button>
+          }
+        >
+          <CalendarIcon
+            className={cn(dir === 'rtl' ? 'ms-2' : 'me-2', 'size-4')}
+          />
+          {formatDateTimeDisplay(date)}
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start" dir={dir}>
           <Calendar

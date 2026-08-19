@@ -187,16 +187,21 @@ export default function PayslipsPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           {p.pdfPath ? (
-                            <Button variant="outline" size="sm" asChild>
-                              <a
-                                href={payslipsApi.downloadUrl(
-                                  basename(p.pdfPath)
-                                )}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                <Download /> {t.download}
-                              </a>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              nativeButton={false}
+                              render={
+                                <a
+                                  href={payslipsApi.downloadUrl(
+                                    basename(p.pdfPath)
+                                  )}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                />
+                              }
+                            >
+                              <Download /> {t.download}
                             </Button>
                           ) : (
                             <span className="text-muted-foreground text-xs">
@@ -253,10 +258,8 @@ function GeneratePayslipDialog({
         if (!o) setPayrollId(0);
       }}
     >
-      <DialogTrigger asChild>
-        <Button disabled={disabled}>
-          <Sparkles /> {t.generate}
-        </Button>
+      <DialogTrigger render={<Button disabled={disabled} />}>
+        <Sparkles /> {t.generate}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -278,7 +281,7 @@ function GeneratePayslipDialog({
               <SelectTrigger id="payslip-payroll">
                 <SelectValue placeholder={t.selectPayroll} />
               </SelectTrigger>
-              <SelectContent position="item-aligned">
+              <SelectContent>
                 {payrolls.map((p) => (
                   <SelectItem key={p.id} value={String(p.id)}>
                     {p.employeeName} — {monthName(p.month)} {p.year}

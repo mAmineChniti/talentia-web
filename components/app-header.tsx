@@ -98,21 +98,23 @@ export function AppHeader({
         <LanguageSwitcher />
 
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="relative h-8 gap-2 rounded-full pr-2 pl-1"
-            >
-              <Avatar className="size-7">
-                <AvatarImage src={user?.profileImageUrl} alt={user?.name} />
-                <AvatarFallback>
-                  {initials(user?.name, user?.lastname)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="hidden max-w-32 truncate text-sm font-medium lg:inline">
-                {fullName(user?.name, user?.lastname)}
-              </span>
-            </Button>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                className="relative h-8 gap-2 rounded-full pr-2 pl-1"
+              />
+            }
+          >
+            <Avatar className="size-7">
+              <AvatarImage src={user?.profileImageUrl} alt={user?.name} />
+              <AvatarFallback>
+                {initials(user?.name, user?.lastname)}
+              </AvatarFallback>
+            </Avatar>
+            <span className="hidden max-w-32 truncate text-sm font-medium lg:inline">
+              {fullName(user?.name, user?.lastname)}
+            </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end">
             <DropdownMenuLabel className="font-normal">
@@ -126,8 +128,8 @@ export function AppHeader({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href={`/${lang}/profile`}>{h.profile}</Link>
+            <DropdownMenuItem render={<Link href={`/${lang}/profile`} />}>
+              {h.profile}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => logoutMutation.mutate()}>

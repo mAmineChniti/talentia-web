@@ -257,7 +257,7 @@ function PeriodFields({
           <SelectTrigger id={`${idPrefix}-month`}>
             <SelectValue />
           </SelectTrigger>
-          <SelectContent position="item-aligned">
+          <SelectContent>
             {Array.from({ length: 12 }, (_, i) => (
               <SelectItem key={i + 1} value={String(i + 1)}>
                 {monthName(i + 1)}
@@ -330,10 +330,8 @@ function GenerateAllDialog() {
           });
       }}
     >
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <Sparkles /> {t.generateAll}
-        </Button>
+      <DialogTrigger render={<Button variant="outline" />}>
+        <Sparkles /> {t.generateAll}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -438,10 +436,8 @@ function AddPayrollDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus /> {t.addPayroll}
-        </Button>
+      <DialogTrigger render={<Button />}>
+        <Plus /> {t.addPayroll}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -474,7 +470,7 @@ function AddPayrollDialog({
                     >
                       <SelectValue placeholder={t.selectEmployee} />
                     </SelectTrigger>
-                    <SelectContent position="item-aligned">
+                    <SelectContent>
                       {employeeOptions(employees, userMap).map((o) => (
                         <SelectItem key={o.id} value={String(o.id)}>
                           {o.name}

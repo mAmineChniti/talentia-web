@@ -326,10 +326,8 @@ function RequestLeaveDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus /> {t.newRequest}
-        </Button>
+      <DialogTrigger render={<Button />}>
+        <Plus /> {t.newRequest}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -360,7 +358,7 @@ function RequestLeaveDialog() {
                     >
                       <SelectValue placeholder={t.selectEmployee} />
                     </SelectTrigger>
-                    <SelectContent position="item-aligned">
+                    <SelectContent>
                       {employeeOptions(employees.data ?? [], userMap).map(
                         (o) => (
                           <SelectItem key={o.id} value={String(o.id)}>
@@ -394,7 +392,7 @@ function RequestLeaveDialog() {
                     >
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent position="item-aligned">
+                    <SelectContent>
                       {LEAVE_TYPES.map((type) => (
                         <SelectItem key={type} value={type}>
                           {leaveTypeLabel[type]}

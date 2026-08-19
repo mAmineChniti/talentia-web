@@ -318,10 +318,8 @@ function ScanDialog({ onScanned }: { onScanned: () => void }) {
         if (!o) form.reset({ qrCode: '' });
       }}
     >
-      <DialogTrigger asChild>
-        <Button>
-          <Fingerprint /> {t.scanQr}
-        </Button>
+      <DialogTrigger render={<Button />}>
+        <Fingerprint /> {t.scanQr}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

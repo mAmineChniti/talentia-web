@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Avatar as AvatarPrimitive } from 'radix-ui';
+import { Avatar as AvatarPrimitive } from '@base-ui/react/avatar';
 
 import { cn } from '@/lib/utils';
 
@@ -9,7 +9,7 @@ function Avatar({
   className,
   size = 'default',
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Root> & {
+}: AvatarPrimitive.Root.Props & {
   size?: 'default' | 'sm' | 'lg';
 }) {
   return (
@@ -25,10 +25,7 @@ function Avatar({
   );
 }
 
-function AvatarImage({
-  className,
-  ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
@@ -44,7 +41,7 @@ function AvatarImage({
 function AvatarFallback({
   className,
   ...props
-}: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+}: AvatarPrimitive.Fallback.Props) {
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
@@ -62,7 +59,7 @@ function AvatarBadge({ className, ...props }: React.ComponentProps<'span'>) {
     <span
       data-slot="avatar-badge"
       className={cn(
-        'bg-primary text-primary-foreground ring-background absolute right-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full bg-blend-color ring-2 select-none',
+        'bg-primary text-primary-foreground ring-background absolute end-0 bottom-0 z-10 inline-flex items-center justify-center rounded-full bg-blend-color ring-2 select-none',
         'group-data-[size=sm]/avatar:size-2 group-data-[size=sm]/avatar:[&>svg]:hidden',
         'group-data-[size=default]/avatar:size-2.5 group-data-[size=default]/avatar:[&>svg]:size-2',
         'group-data-[size=lg]/avatar:size-3 group-data-[size=lg]/avatar:[&>svg]:size-2',

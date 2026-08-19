@@ -14,6 +14,8 @@ import {
 
 import { getDictionary } from '@/get-dictionary';
 import { Providers } from '@/components/providers';
+import { DirectionProvider } from '@/components/ui/direction';
+import { cn } from '@/lib/utils';
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
@@ -30,10 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const fontSans = Inter({
-  subsets: ['latin', 'latin-ext'],
-  variable: '--font-sans',
-});
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 const fontHeading = Plus_Jakarta_Sans({
   subsets: ['latin', 'latin-ext'],
@@ -61,12 +60,19 @@ export default async function RootLayout({
       lang={lang}
       dir={dir}
       suppressHydrationWarning
-      className={`${fontSans.variable} ${fontHeading.variable} ${fontMono.variable}`}
+      className={cn(
+        fontHeading.variable,
+        fontMono.variable,
+        'font-sans',
+        inter.variable
+      )}
     >
       <body className="bg-background text-foreground min-h-screen antialiased">
-        <Providers lang={lang} dir={dir} dict={dict}>
-          {children}
-        </Providers>
+        <DirectionProvider direction={dir}>
+          <Providers lang={lang} dir={dir} dict={dict}>
+            {children}
+          </Providers>
+        </DirectionProvider>
       </body>
     </html>
   );

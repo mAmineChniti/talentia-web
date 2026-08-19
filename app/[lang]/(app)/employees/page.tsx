@@ -235,10 +235,12 @@ function RowActions({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label={t.actions}>
-            <MoreHorizontal />
-          </Button>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="icon-sm" aria-label={t.actions} />
+          }
+        >
+          <MoreHorizontal />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setOpen(true)}>
@@ -293,10 +295,8 @@ function AddEmployeeDialog({ users }: { users: User[] }) {
   const [open, setOpen] = React.useState(false);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus /> {t.addEmployee}
-        </Button>
+      <DialogTrigger render={<Button />}>
+        <Plus /> {t.addEmployee}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -433,7 +433,7 @@ function EmployeeForm({
                   >
                     <SelectValue placeholder={t.selectUser} />
                   </SelectTrigger>
-                  <SelectContent position="item-aligned">
+                  <SelectContent>
                     {users?.map((u) => (
                       <SelectItem key={u.id} value={String(u.id)}>
                         {fullName(u.name, u.lastname)} — {u.email}
@@ -512,7 +512,7 @@ function EmployeeForm({
                   >
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent position="item-aligned">
+                  <SelectContent>
                     {CONTRACT_TYPES.map((type) => (
                       <SelectItem key={type} value={type}>
                         {type}

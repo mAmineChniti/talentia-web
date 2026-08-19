@@ -439,10 +439,8 @@ function ScheduleInterviewDialog({
         if (!o) form.reset();
       }}
     >
-      <DialogTrigger asChild>
-        <Button disabled={disabled}>
-          <Plus /> {t.scheduleInterview}
-        </Button>
+      <DialogTrigger render={<Button disabled={disabled} />}>
+        <Plus /> {t.scheduleInterview}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -475,7 +473,7 @@ function ScheduleInterviewDialog({
                     >
                       <SelectValue placeholder={t.selectCandidate} />
                     </SelectTrigger>
-                    <SelectContent position="item-aligned">
+                    <SelectContent>
                       {applications.map((a) => (
                         <SelectItem key={a.id} value={String(a.id)}>
                           {`${a.candidateName} (${a.score}%)`}
@@ -510,7 +508,7 @@ function ScheduleInterviewDialog({
                       >
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent position="item-aligned">
+                      <SelectContent>
                         <SelectItem value="ONLINE">{t.online}</SelectItem>
                         <SelectItem value="ONSITE">{t.onsite}</SelectItem>
                       </SelectContent>

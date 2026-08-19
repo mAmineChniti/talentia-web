@@ -370,8 +370,13 @@ export default function DashboardPage() {
               <CardTitle>{t.recentLeaveRequests}</CardTitle>
               <CardDescription>{t.recentLeaveRequestsDesc}</CardDescription>
             </div>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/leaves">{t.viewAll}</Link>
+            <Button
+              render={<Link href="/leaves" />}
+              nativeButton={false}
+              variant="ghost"
+              size="sm"
+            >
+              {t.viewAll}
             </Button>
           </CardHeader>
           <CardContent>

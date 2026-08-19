@@ -262,10 +262,12 @@ function RowActions({ contract }: { contract: ContractResponse }) {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label={t.actions}>
-            <MoreHorizontal />
-          </Button>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="icon-sm" aria-label={t.actions} />
+          }
+        >
+          <MoreHorizontal />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setOpen(true)}>
@@ -322,10 +324,8 @@ function AddContractDialog({
   const [open, setOpen] = React.useState(false);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus /> {t.addContract}
-        </Button>
+      <DialogTrigger render={<Button />}>
+        <Plus /> {t.addContract}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -492,7 +492,7 @@ function ContractForm({
                   >
                     <SelectValue placeholder={t.selectEmployee} />
                   </SelectTrigger>
-                  <SelectContent position="item-aligned">
+                  <SelectContent>
                     {employeeOptions(employees ?? [], userMap ?? new Map()).map(
                       (o) => (
                         <SelectItem key={o.id} value={String(o.id)}>
@@ -530,7 +530,7 @@ function ContractForm({
                   >
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent position="item-aligned">
+                  <SelectContent>
                     {CONTRACT_TYPES.map((type) => (
                       <SelectItem key={type} value={type}>
                         {CONTRACT_TYPE_LABELS[type] ?? type}

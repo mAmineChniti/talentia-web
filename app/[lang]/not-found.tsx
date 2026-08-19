@@ -24,11 +24,9 @@ export default function NotFound() {
           {t.message}
         </p>
       </div>
-      <Button asChild>
-        <Link href={`/${lang}`}>
-          {dict.common.backHome}
-          <ArrowRight className="size-4" />
-        </Link>
+      <Button render={<Link href={`/${lang}`} />} nativeButton={false}>
+        {dict.common.backHome}
+        <ArrowRight className="size-4 rtl:rotate-180" />
       </Button>
     </div>
   );

@@ -79,13 +79,21 @@ export default function LandingPage() {
             {landing.hero.subtitle}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Button asChild size="lg">
-              <Link href={`/${lang}/register`}>
-                {landing.hero.primaryCta} <ArrowRight />
-              </Link>
+            <Button
+              render={<Link href={`/${lang}/register`} />}
+              nativeButton={false}
+              size="lg"
+            >
+              {landing.hero.primaryCta}{' '}
+              <ArrowRight className="rtl:rotate-180" />
             </Button>
-            <Button asChild size="lg" variant="outline">
-              <a href="#features">{landing.hero.secondaryCta}</a>
+            <Button
+              render={<a href="#features" />}
+              nativeButton={false}
+              size="lg"
+              variant="outline"
+            >
+              {landing.hero.secondaryCta}
             </Button>
           </div>
 
@@ -266,11 +274,12 @@ export default function LandingPage() {
                 ))}
               </ul>
               <Button
-                asChild
+                render={<Link href={`/${lang}/login`} />}
+                nativeButton={false}
                 className="mt-6 w-full"
                 variant={p.highlight ? 'default' : 'outline'}
               >
-                <Link href={`/${lang}/login`}>{p.cta}</Link>
+                {p.cta}
               </Button>
             </div>
           ))}
@@ -292,18 +301,23 @@ export default function LandingPage() {
               {landing.cta.subtitle}
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <Button asChild size="lg" variant="secondary">
-                <Link href={`/${lang}/login`}>
-                  {landing.cta.primaryCta} <ArrowRight />
-                </Link>
+              <Button
+                render={<Link href={`/${lang}/login`} />}
+                nativeButton={false}
+                size="lg"
+                variant="secondary"
+              >
+                {landing.cta.primaryCta}{' '}
+                <ArrowRight className="rtl:rotate-180" />
               </Button>
               <Button
-                asChild
+                render={<a href="#features" />}
+                nativeButton={false}
                 size="lg"
                 variant="ghost"
                 className="text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/10"
               >
-                <a href="#features">{landing.cta.secondaryCta}</a>
+                {landing.cta.secondaryCta}
               </Button>
             </div>
           </div>
@@ -321,24 +335,24 @@ export default function LandingPage() {
             <span>© 2026 TalentIA. {landing.footer.rights}</span>
           </div>
           <div className="flex items-center gap-6">
-            <a
+            <Link
               href="#privacy"
               className="hover:text-foreground transition-colors"
             >
               {landing.footer.privacy}
-            </a>
-            <a
+            </Link>
+            <Link
               href="#terms"
               className="hover:text-foreground transition-colors"
             >
               {landing.footer.terms}
-            </a>
-            <a
+            </Link>
+            <Link
               href="#contact"
               className="hover:text-foreground transition-colors"
             >
               {landing.footer.contact}
-            </a>
+            </Link>
           </div>
         </div>
       </footer>

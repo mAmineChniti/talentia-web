@@ -297,10 +297,8 @@ function EnrollDialog({
         if (!o) setEmployeeId(0);
       }}
     >
-      <DialogTrigger asChild>
-        <Button size="sm" disabled={disabled}>
-          <UserPlus /> {t.enroll}
-        </Button>
+      <DialogTrigger render={<Button size="sm" disabled={disabled} />}>
+        <UserPlus /> {t.enroll}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -324,7 +322,7 @@ function EnrollDialog({
               <SelectTrigger id="enroll-employee">
                 <SelectValue placeholder={t.selectEmployee} />
               </SelectTrigger>
-              <SelectContent position="item-aligned">
+              <SelectContent>
                 {employeeOptions(employees, userMap).map((o) => (
                   <SelectItem key={o.id} value={String(o.id)}>
                     {o.name}
@@ -381,10 +379,8 @@ function AddTrainingDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus /> {t.newTraining}
-        </Button>
+      <DialogTrigger render={<Button />}>
+        <Plus /> {t.newTraining}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>

@@ -45,16 +45,18 @@ export function LanguageSwitcher() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label={dict.common.language}
-          title={dict.common.language}
-        >
-          <Globe className="size-4" />
-          <span className="sr-only">{shortLabels[lang]}</span>
-        </Button>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={dict.common.language}
+            title={dict.common.language}
+          />
+        }
+      >
+        <Globe className="size-4" />
+        <span className="sr-only">{shortLabels[lang]}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {locales.map((locale) => (

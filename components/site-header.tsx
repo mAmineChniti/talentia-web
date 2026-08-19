@@ -29,43 +29,49 @@ export function SiteHeader() {
 
         {!isAuthPage && (
           <nav className="text-muted-foreground hidden items-center gap-8 text-sm font-medium md:flex">
-            <a
+            <Link
               href="#features"
               className="hover:text-foreground transition-colors"
             >
               {dict.landing.nav.features}
-            </a>
-            <a
+            </Link>
+            <Link
               href="#modules"
               className="hover:text-foreground transition-colors"
             >
               {dict.landing.nav.modules}
-            </a>
-            <a
+            </Link>
+            <Link
               href="#testimonials"
               className="hover:text-foreground transition-colors"
             >
               {dict.landing.nav.testimonials}
-            </a>
-            <a
+            </Link>
+            <Link
               href="#pricing"
               className="hover:text-foreground transition-colors"
             >
               {dict.landing.nav.pricing}
-            </a>
+            </Link>
           </nav>
         )}
 
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
           <ModeToggle />
-          <Button asChild variant="outline" className="hidden sm:inline-flex">
-            <Link href={`/${lang}/login`}>{dict.landing.nav.login}</Link>
+          <Button
+            render={<Link href={`/${lang}/login`} />}
+            nativeButton={false}
+            variant="outline"
+            className="hidden sm:inline-flex"
+          >
+            {dict.landing.nav.login}
           </Button>
-          <Button asChild>
-            <Link href={`/${lang}/register`}>
-              {dict.landing.nav.register} <ArrowRight />
-            </Link>
+          <Button
+            render={<Link href={`/${lang}/register`} />}
+            nativeButton={false}
+          >
+            {dict.landing.nav.register} <ArrowRight />
           </Button>
         </div>
       </div>

@@ -161,7 +161,7 @@ export default function LoginPage() {
                 {loginMutation.isPending ? (
                   <LoaderCircle className="animate-spin" />
                 ) : (
-                  <ArrowRight />
+                  <ArrowRight className="rtl:rotate-180" />
                 )}
                 {loginMutation.isPending ? t.submitLoading : t.submit}
               </Button>
