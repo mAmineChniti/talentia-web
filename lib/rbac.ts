@@ -16,6 +16,7 @@ const ROUTE_ROLES: Record<string, Role[]> = {
   payslips: ['ADMIN'],
   trainings: ['USER', 'HR', 'ADMIN'],
   recruitment: ['HR', 'ADMIN'],
+  forum: ['USER', 'HR', 'ADMIN'],
   profile: ['USER', 'HR', 'ADMIN'],
 };
 

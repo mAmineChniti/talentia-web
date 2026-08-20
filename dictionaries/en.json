@@ -299,7 +299,9 @@
     "payslips": "Payslips",
     "development": "Growth",
     "trainings": "Trainings",
-    "recruitment": "Recruiting"
+    "recruitment": "Recruiting",
+    "forum": "Community",
+    "community": "Collaboration"
   },
   "header": {
     "home": "Home",
@@ -320,7 +322,8 @@
       "payslips": "Payslips",
       "trainings": "Trainings",
       "recruitment": "Recruiting",
-      "profile": "Profile"
+      "profile": "Profile",
+      "forum": "Community Feed"
     }
   },
   "profile": {
@@ -771,5 +774,67 @@
     "creating": "Creating…",
     "createTraining": "Create training",
     "successCreated": "Training created"
+  },
+  "forum": {
+    "title": "Community Feed",
+    "description": "Share updates, job openings and training opportunities with your team.",
+    "newPost": "New post",
+    "createDialogTitle": "Create a post",
+    "createDialogDesc": "Share something with the TalentIA community.",
+    "contentLabel": "Content",
+    "contentPlaceholder": "What do you want to share?",
+    "typeLabel": "Type",
+    "types": {
+      "PUBLICITE": "Announcement",
+      "POSTE_TRAVAIL": "Job opening",
+      "FORMATION": "Training"
+    },
+    "submit": "Publish",
+    "submitting": "Publishing…",
+    "successCreated": "Post published",
+    "successDeleted": "Post deleted",
+    "delete": "Delete",
+    "deletePostTitle": "Delete post",
+    "deletePostDesc": "This post and its comments will be removed permanently.",
+    "comments": "Comments",
+    "commentPlaceholder": "Write a comment…",
+    "addComment": "Comment",
+    "posting": "Posting…",
+    "successCommented": "Comment added",
+    "commentDeleted": "Comment deleted",
+    "emptyTitle": "No posts yet",
+    "emptyDesc": "Be the first to share something with the team.",
+    "likes": "Likes",
+    "like": "Like",
+    "liked": "Liked",
+    "noComments": "No comments yet. Start the discussion!",
+    "cancel": "Cancel"
+  },
+  "forgotPassword": {
+    "title": "Forgot password",
+    "description": "Enter your email address and we'll send you a reset link.",
+    "email": "Email address",
+    "emailPlaceholder": "you@company.com",
+    "submit": "Send reset link",
+    "submitting": "Sending…",
+    "success": "If an account exists for this email, a reset code has been sent.",
+    "backToLogin": "Back to login"
+  },
+  "resetPassword": {
+    "title": "Reset password",
+    "description": "Choose a new password for your account.",
+    "newPassword": "New password",
+    "newPasswordPlaceholder": "At least 6 characters",
+    "confirmPassword": "Confirm password",
+    "submit": "Reset password",
+    "submitting": "Resetting…",
+    "success": "Password updated. You can now log in.",
+    "invalidToken": "This reset link is invalid or has expired.",
+    "backToLogin": "Back to login",
+    "codeLabel": "Reset code",
+    "codePlaceholder": "Paste the code from the email",
+    "codeHint": "Check your inbox for the reset code sent by email.",
+    "verifyCode": "Verify code",
+    "validatingCode": "Verifying…"
   }
 }

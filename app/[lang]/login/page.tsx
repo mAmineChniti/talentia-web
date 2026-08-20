@@ -200,7 +200,7 @@ export default function LoginPage() {
                               {t.password}
                             </FieldLabel>
                             <Link
-                              href="#"
+                              href={`/${lang}/forgot-password`}
                               className="text-primary text-xs font-medium hover:underline"
                             >
                               {t.forgot}

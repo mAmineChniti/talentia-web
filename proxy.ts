@@ -19,6 +19,7 @@ const PROTECTED_PREFIXES = [
   '/payslips',
   '/trainings',
   '/recruitment',
+  '/forum',
 ];
 
 const ROUTE_ROLES: Record<string, string[]> = {
@@ -31,6 +32,7 @@ const ROUTE_ROLES: Record<string, string[]> = {
   payslips: ['ADMIN'],
   trainings: ['USER', 'HR', 'ADMIN'],
   recruitment: ['HR', 'ADMIN'],
+  forum: ['USER', 'HR', 'ADMIN'],
 };
 
 function getLocale(request: NextRequest): Locale {

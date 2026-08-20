@@ -57,6 +57,7 @@ export function AppHeader({
     [`/${lang}/payslips`]: pages.payslips,
     [`/${lang}/trainings`]: pages.trainings,
     [`/${lang}/recruitment`]: pages.recruitment,
+    [`/${lang}/forum`]: pages.forum,
     [`/${lang}/profile`]: pages.profile,
   };
 

@@ -10,6 +10,7 @@ import {
   Sparkles,
   Users,
   GraduationCap,
+  MessagesSquare,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -84,6 +85,10 @@ export function AppSidebar() {
           icon: BriefcaseBusiness,
         },
       ],
+    },
+    {
+      label: s.community,
+      items: [{ title: s.forum, url: `/${lang}/forum`, icon: MessagesSquare }],
     },
   ];
 

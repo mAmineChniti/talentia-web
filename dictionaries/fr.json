@@ -299,7 +299,9 @@
     "payslips": "Bulletins de paie",
     "development": "Développement",
     "trainings": "Formations",
-    "recruitment": "Recrutement"
+    "recruitment": "Recrutement",
+    "forum": "Communauté",
+    "community": "Collaboration"
   },
   "header": {
     "home": "Accueil",
@@ -320,7 +322,8 @@
       "payslips": "Bulletins de paie",
       "trainings": "Formations",
       "recruitment": "Recrutement",
-      "profile": "Profil"
+      "profile": "Profil",
+      "forum": "Fil communautaire"
     }
   },
   "profile": {
@@ -771,5 +774,67 @@
     "creating": "Création…",
     "createTraining": "Créer la formation",
     "successCreated": "Formation créée"
+  },
+  "forum": {
+    "title": "Fil communautaire",
+    "description": "Partagez actualités, offres d'emploi et formations avec votre équipe.",
+    "newPost": "Nouveau post",
+    "createDialogTitle": "Créer un post",
+    "createDialogDesc": "Partagez quelque chose avec la communauté TalentIA.",
+    "contentLabel": "Contenu",
+    "contentPlaceholder": "Que souhaitez-vous partager ?",
+    "typeLabel": "Type",
+    "types": {
+      "PUBLICITE": "Annonce",
+      "POSTE_TRAVAIL": "Offre d'emploi",
+      "FORMATION": "Formation"
+    },
+    "submit": "Publier",
+    "submitting": "Publication…",
+    "successCreated": "Post publié",
+    "successDeleted": "Post supprimé",
+    "delete": "Supprimer",
+    "deletePostTitle": "Supprimer le post",
+    "deletePostDesc": "Ce post et ses commentaires seront supprimés définitivement.",
+    "comments": "Commentaires",
+    "commentPlaceholder": "Écrire un commentaire…",
+    "addComment": "Commenter",
+    "posting": "Envoi…",
+    "successCommented": "Commentaire ajouté",
+    "commentDeleted": "Commentaire supprimé",
+    "emptyTitle": "Aucun post",
+    "emptyDesc": "Soyez le premier à partager quelque chose avec l'équipe.",
+    "likes": "J'aime",
+    "like": "J'aime",
+    "liked": "J'aime",
+    "noComments": "Aucun commentaire. Lancez la discussion !",
+    "cancel": "Annuler"
+  },
+  "forgotPassword": {
+    "title": "Mot de passe oublié",
+    "description": "Saisissez votre adresse e-mail et nous vous enverrons un lien de réinitialisation.",
+    "email": "Adresse e-mail",
+    "emailPlaceholder": "vous@entreprise.com",
+    "submit": "Envoyer le lien",
+    "submitting": "Envoi…",
+    "success": "Si un compte existe pour cet e-mail, un code de réinitialisation a été envoyé.",
+    "backToLogin": "Retour à la connexion"
+  },
+  "resetPassword": {
+    "title": "Réinitialiser le mot de passe",
+    "description": "Choisissez un nouveau mot de passe pour votre compte.",
+    "newPassword": "Nouveau mot de passe",
+    "newPasswordPlaceholder": "Au moins 6 caractères",
+    "confirmPassword": "Confirmer le mot de passe",
+    "submit": "Réinitialiser",
+    "submitting": "Réinitialisation…",
+    "success": "Mot de passe mis à jour. Vous pouvez maintenant vous connecter.",
+    "invalidToken": "Ce lien de réinitialisation est invalide ou a expiré.",
+    "backToLogin": "Retour à la connexion",
+    "codeLabel": "Code de réinitialisation",
+    "codePlaceholder": "Collez le code reçu par e-mail",
+    "codeHint": "Vérifiez votre boîte mail pour le code de réinitialisation.",
+    "verifyCode": "Vérifier le code",
+    "validatingCode": "Vérification…"
   }
 }

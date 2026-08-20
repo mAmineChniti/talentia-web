@@ -299,7 +299,9 @@
     "payslips": "كشوف المرتبات",
     "development": "التطوير",
     "trainings": "التدريب",
-    "recruitment": "التوظيف"
+    "recruitment": "التوظيف",
+    "forum": "المجتمع",
+    "community": "التعاون"
   },
   "header": {
     "home": "الرئيسية",
@@ -320,7 +322,8 @@
       "payslips": "كشوف المرتبات",
       "trainings": "التدريب",
       "recruitment": "التوظيف",
-      "profile": "الملف الشخصي"
+      "profile": "الملف الشخصي",
+      "forum": "الموجز المجتمعي"
     }
   },
   "profile": {
@@ -771,5 +774,67 @@
     "creating": "جارٍ الإنشاء…",
     "createTraining": "إنشاء التدريب",
     "successCreated": "تم إنشاء التدريب"
+  },
+  "forum": {
+    "title": "الموجز المجتمعي",
+    "description": "شارك التحديثات وفرص العمل والدورات التدريبية مع فريقك.",
+    "newPost": "منشور جديد",
+    "createDialogTitle": "إنشاء منشور",
+    "createDialogDesc": "شارك شيئًا مع مجتمع TalentIA.",
+    "contentLabel": "المحتوى",
+    "contentPlaceholder": "ماذا تريد أن تشارك؟",
+    "typeLabel": "النوع",
+    "types": {
+      "PUBLICITE": "إعلان",
+      "POSTE_TRAVAIL": "فرصة عمل",
+      "FORMATION": "تدريب"
+    },
+    "submit": "نشر",
+    "submitting": "جارٍ النشر…",
+    "successCreated": "تم نشر المنشور",
+    "successDeleted": "تم حذف المنشور",
+    "delete": "حذف",
+    "deletePostTitle": "حذف المنشور",
+    "deletePostDesc": "سيتم حذف هذا المنشور وتعليقاته نهائيًا.",
+    "comments": "التعليقات",
+    "commentPlaceholder": "اكتب تعليقًا…",
+    "addComment": "تعليق",
+    "posting": "جارٍ الإرسال…",
+    "successCommented": "تمت إضافة التعليق",
+    "commentDeleted": "تم حذف التعليق",
+    "emptyTitle": "لا توجد منشورات",
+    "emptyDesc": "كن أول من يشارك شيئًا مع الفريق.",
+    "likes": "إعجابات",
+    "like": "إعجاب",
+    "liked": "تم الإعجاب",
+    "noComments": "لا توجد تعليقات بعد. ابدأ النقاش!",
+    "cancel": "إلغاء"
+  },
+  "forgotPassword": {
+    "title": "نسيت كلمة المرور",
+    "description": "أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين.",
+    "email": "البريد الإلكتروني",
+    "emailPlaceholder": "you@company.com",
+    "submit": "إرسال رابط إعادة التعيين",
+    "submitting": "جارٍ الإرسال…",
+    "success": "إذا كان هناك حساب لهذا البريد، فقد تم إرسال رمز إعادة التعيين.",
+    "backToLogin": "العودة إلى تسجيل الدخول"
+  },
+  "resetPassword": {
+    "title": "إعادة تعيين كلمة المرور",
+    "description": "اختر كلمة مرور جديدة لحسابك.",
+    "newPassword": "كلمة المرور الجديدة",
+    "newPasswordPlaceholder": "6 أحرف على الأقل",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "submit": "إعادة التعيين",
+    "submitting": "جارٍ إعادة التعيين…",
+    "success": "تم تحديث كلمة المرور. يمكنك الآن تسجيل الدخول.",
+    "invalidToken": "رابط إعادة التعيين هذا غير صالح أو منتهي الصلاحية.",
+    "backToLogin": "العودة إلى تسجيل الدخول",
+    "codeLabel": "رمز إعادة التعيين",
+    "codePlaceholder": "الصق الرمز المستلم عبر البريد الإلكتروني",
+    "codeHint": "تحقق من بريدك الإلكتروني للحصول على رمز إعادة التعيين.",
+    "verifyCode": "تحقق من الرمز",
+    "validatingCode": "جارٍ التحقق…"
   }
 }
