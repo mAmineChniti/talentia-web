@@ -6,11 +6,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type * as z from 'zod';
 import {
   Briefcase,
-  Plus,
-  Star,
-  Video,
+  CalendarClock,
+  CircleCheck,
+  CircleX,
   MapPin,
-  MessageSquareText,
+  Plus,
+  Sparkles,
+  Star,
+  ThumbsUp,
+  Video,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -24,13 +28,14 @@ import type {
   InterviewRequest,
   InterviewResponse,
 } from '@/lib/types/interviews';
-import { formatDate, formatDateTime } from '@/lib/format';
+import { formatDate, formatDateTime, initials } from '@/lib/format';
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
 import { StatusBadge } from '@/components/status-badge';
 import { EmptyState, ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DateTimePicker } from '@/components/ui/date-picker';
@@ -61,10 +66,12 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 type InterviewFormValues = z.infer<ReturnType<typeof createInterviewSchema>>;
 
@@ -78,7 +85,7 @@ function Stars({ value, className }: { value: number; className?: string }) {
             className={
               i < Math.round(value)
                 ? 'fill-chart-3 text-chart-3 size-3.5'
-                : 'text-muted-foreground/40 size-3.5'
+                : 'text-muted-foreground/30 size-3.5'
             }
           />
         );
@@ -86,6 +93,61 @@ function Stars({ value, className }: { value: number; className?: string }) {
     </div>
   );
 }
+
+function ScoreRing({ score, size = 56 }: { score: number; size?: number }) {
+  const stroke = 5;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.min(Math.max(score, 0), 100);
+  const offset = circumference - (clamped / 100) * circumference;
+  const color =
+    clamped >= 70
+      ? 'var(--color-chart-2)'
+      : clamped >= 40
+        ? 'var(--color-chart-3)'
+        : 'var(--color-chart-5)';
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="var(--color-muted)"
+          strokeWidth={stroke}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className="transition-all duration-700"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span
+          className="font-heading text-sm font-semibold tabular-nums"
+          style={{ color }}
+        >
+          {clamped}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const recommendationTone: Record<string, string> = {
+  ACCEPTER: 'bg-chart-2/10 text-chart-2 ring-chart-2/25',
+  ENTRETIEN: 'bg-info/10 text-info ring-info/25',
+  REFUSER: 'bg-destructive/10 text-destructive ring-destructive/25',
+};
 
 export default function RecruitmentPage() {
   const { dict } = useI18n();
@@ -116,8 +178,10 @@ export default function RecruitmentPage() {
   return (
     <div className="grid gap-6">
       <PageHeader
+        kicker={t.aiAnalysis.replace(':', '')}
         title={t.title}
         description={t.description}
+        icon={<Briefcase className="size-6" />}
         actions={
           tab === 'interviews' ? (
             <ScheduleInterviewDialog
@@ -154,20 +218,39 @@ export default function RecruitmentPage() {
           label={t.recommended}
           value={(applications.data ?? []).filter((a) => a.score >= 70).length}
           hint={t.recommendedHint}
-          icon={<MessageSquareText className="size-5" />}
+          icon={<ThumbsUp className="size-5" />}
           accent="success"
         />
       </div>
 
-      <Tabs
-        value={tab}
-        onValueChange={(v) => setTab(v as 'applications' | 'interviews')}
-      >
-        <TabsList>
-          <TabsTrigger value="applications">{t.applicationsTab}</TabsTrigger>
-          <TabsTrigger value="interviews">{t.interviewsTab}</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="flex items-center justify-between">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => setTab(v as 'applications' | 'interviews')}
+        >
+          <TabsList className="bg-muted/50">
+            <TabsTrigger value="applications">
+              {t.applicationsTab}
+              <span className="bg-primary/10 text-primary ms-1.5 rounded-full px-1.5 text-[10px] font-semibold">
+                {applications.data?.length ?? 0}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="interviews">
+              {t.interviewsTab}
+              <span className="bg-chart-2/15 text-chart-2 ms-1.5 rounded-full px-1.5 text-[10px] font-semibold">
+                {interviews.data?.length ?? 0}
+              </span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        {tab === 'interviews' && (
+          <ScheduleInterviewDialog
+            applications={applications.data ?? []}
+            disabled={(applications.data?.length ?? 0) === 0}
+            className="hidden sm:inline-flex"
+          />
+        )}
+      </div>
 
       {tab === 'applications' ? (
         <ApplicationsView applications={applications} />
@@ -197,7 +280,7 @@ function ApplicationsView({
       ) : loading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }, (_, i) => {
-            return <Skeleton key={i} className="h-72 w-full" />;
+            return <Skeleton key={i} className="h-80 w-full" />;
           })}
         </div>
       ) : (data ?? []).length === 0 ? (
@@ -226,59 +309,88 @@ function ApplicationCard({ app }: { app: ApplicationResponse }) {
     REFUSER: t.refuse,
   };
   return (
-    <Card className="flex flex-col rounded-lg">
-      <CardHeader className="pb-3">
+    <Card className="group flex flex-col overflow-hidden rounded-2xl shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+      <CardHeader className="bg-muted/25 border-b pb-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <CardTitle className="truncate text-base">
-              {app.candidateName}
-            </CardTitle>
-            <p className="text-muted-foreground mt-0.5 truncate text-xs">
-              {app.candidateEmail}
-            </p>
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar className="from-primary/20 to-brand-2/20 ring-primary/15 size-11 rounded-xl bg-linear-to-br ring-1">
+              <AvatarFallback className="rounded-xl">
+                {initials(...app.candidateName.split(' '))}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <CardTitle className="truncate text-[15px]">
+                {app.candidateName}
+              </CardTitle>
+              <p className="text-muted-foreground truncate text-xs">
+                {app.candidateEmail}
+              </p>
+            </div>
           </div>
           <StatusBadge status={app.status} />
         </div>
-        <div className="flex items-center gap-2 pt-1">
-          <span className="text-lg font-semibold">{app.score}%</span>
-          <Stars value={app.stars} />
-          <span className="text-muted-foreground ml-auto text-xs">
-            {formatDate(app.datePostulation)}
-          </span>
+        <div className="mt-3 flex items-center gap-3">
+          <ScoreRing score={app.score} />
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <Stars value={app.stars} />
+            </div>
+            <p className="text-muted-foreground mt-1 flex items-center gap-1.5 text-xs">
+              <CalendarClock className="size-3.5" />
+              {formatDate(app.datePostulation)}
+            </p>
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 space-y-3 text-sm">
+      <CardContent className="flex-1 space-y-3 p-4 text-sm">
         {app.strengths && (
-          <div className="border-chart-2/20 bg-chart-2/5 rounded-lg border p-3">
-            <p className="text-chart-2 mb-1 text-xs font-semibold tracking-wide uppercase">
-              {t.strengths}
+          <div className="border-chart-2/20 bg-chart-2/5 rounded-xl border p-3">
+            <p className="text-chart-2 mb-1 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase">
+              <CircleCheck className="size-3.5" /> {t.strengths}
             </p>
-            <p className="text-muted-foreground text-xs">{app.strengths}</p>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              {app.strengths}
+            </p>
           </div>
         )}
         {app.weaknesses && (
-          <div className="border-chart-3/20 bg-chart-3/5 rounded-lg border p-3">
-            <p className="text-chart-3 mb-1 text-xs font-semibold tracking-wide uppercase">
-              {t.weaknesses}
+          <div className="border-chart-3/20 bg-chart-3/5 rounded-xl border p-3">
+            <p className="text-chart-3 mb-1 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase">
+              <CircleX className="size-3.5" /> {t.weaknesses}
             </p>
-            <p className="text-muted-foreground text-xs">{app.weaknesses}</p>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              {app.weaknesses}
+            </p>
           </div>
         )}
         {app.feedback && (
-          <p className="bg-muted/60 text-muted-foreground rounded-lg p-3 text-xs">
-            <span className="text-foreground font-medium">{t.aiAnalysis}</span>
-            {app.feedback}
-          </p>
+          <div className="bg-primary/5 ring-primary/10 rounded-xl p-3 ring-1 ring-inset">
+            <p className="text-primary mb-1 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase">
+              <Sparkles className="size-3.5" /> {t.aiAnalysis}
+            </p>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              {app.feedback}
+            </p>
+          </div>
         )}
         {app.recommendation && (
-          <p className="text-xs font-medium">
-            {`${t.recommendation} ${
-              app.recommendation
+          <div className="mt-auto flex items-center gap-2 pt-1">
+            <span className="text-muted-foreground text-xs">
+              {t.recommendation}
+            </span>
+            <span
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset',
+                recommendationTone[app.recommendation] ??
+                  'bg-muted text-muted-foreground'
+              )}
+            >
+              {app.recommendation
                 ? (recommendationLabels[app.recommendation] ??
                   app.recommendation)
-                : '—'
-            }`}
-          </p>
+                : '—'}
+            </span>
+          </div>
         )}
       </CardContent>
     </Card>
@@ -321,67 +433,98 @@ function InterviewsView({
           }
         />
       ) : (
-        <Card className="rounded-lg py-0">
-          <CardContent className="py-4">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t.candidate}</TableHead>
-                    <TableHead>{t.dateAndTime}</TableHead>
-                    <TableHead>{t.type}</TableHead>
-                    <TableHead>{t.location}</TableHead>
-                    <TableHead>{t.status}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {[...(data ?? [])]
-                    .toSorted((a, b) => {
-                      return (b.interviewDate ?? '').localeCompare(
-                        a.interviewDate ?? ''
-                      );
-                    })
-                    .map((interview) => {
-                      const app = applicationMap.get(interview.applicationId);
-                      return (
-                        <TableRow key={interview.id}>
-                          <TableCell className="text-sm font-medium">
-                            {app?.candidateName ??
-                              `Candidature #${interview.applicationId}`}
-                          </TableCell>
-                          <TableCell>
+        <Card className="overflow-hidden rounded-2xl shadow-sm">
+          <CardContent className="overflow-x-auto p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t.candidate}</TableHead>
+                  <TableHead>{t.dateAndTime}</TableHead>
+                  <TableHead>{t.type}</TableHead>
+                  <TableHead>{t.location}</TableHead>
+                  <TableHead>{t.status}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...(data ?? [])]
+                  .toSorted((a, b) => {
+                    return (b.interviewDate ?? '').localeCompare(
+                      a.interviewDate ?? ''
+                    );
+                  })
+                  .map((interview) => {
+                    const app = applicationMap.get(interview.applicationId);
+                    const name =
+                      app?.candidateName ??
+                      t.candidateName
+                        .split('{id}')
+                        .join(String(interview.applicationId));
+                    return (
+                      <TableRow key={interview.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="from-primary/15 to-brand-2/15 size-9 rounded-lg bg-linear-to-br ring-1 ring-black/5">
+                              <AvatarFallback className="rounded-lg text-[11px] font-semibold">
+                                {initials(...name.split(' '))}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium">
+                                {name}
+                              </p>
+                              {app && (
+                                <p className="text-muted-foreground truncate text-xs">
+                                  {app.candidateEmail}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="bg-muted/60 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium tabular-nums">
+                            <CalendarClock className="text-muted-foreground size-3.5" />
                             {formatDateTime(interview.interviewDate)}
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge status={interview.type} />
-                          </TableCell>
-                          <TableCell className="text-muted-foreground max-w-[220px] truncate">
-                            {interview.type === 'ONLINE' &&
-                            interview.meetingLink ? (
-                              <a
-                                href={interview.meetingLink}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-primary inline-flex items-center gap-1.5 hover:underline"
-                              >
-                                <Video className="size-3.5" /> {t.meetingLink}
-                              </a>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5">
-                                <MapPin className="size-3.5" />{' '}
-                                {interview.location || '—'}
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <StatusBadge status={interview.status} />
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                </TableBody>
-              </Table>
-            </div>
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={interview.type} />
+                        </TableCell>
+                        <TableCell className="text-muted-foreground max-w-[220px] truncate">
+                          {interview.type === 'ONLINE' &&
+                          interview.meetingLink ? (
+                            <a
+                              href={interview.meetingLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-primary hover:bg-primary/10 inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors hover:underline"
+                            >
+                              <Video className="size-3.5" /> {t.meetingLink}
+                            </a>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5">
+                              <MapPin className="size-3.5" />{' '}
+                              {interview.location || '—'}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={interview.status} />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="text-muted-foreground text-xs"
+                  >
+                    {t.interviewsHint}: {data?.length ?? 0}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            </Table>
           </CardContent>
         </Card>
       )}
@@ -392,9 +535,11 @@ function InterviewsView({
 function ScheduleInterviewDialog({
   applications,
   disabled,
+  className,
 }: {
   applications: ApplicationResponse[];
   disabled: boolean;
+  className?: string;
 }) {
   const { dict } = useI18n();
   const t = dict.recruitment;
@@ -439,7 +584,9 @@ function ScheduleInterviewDialog({
         if (!o) form.reset();
       }}
     >
-      <DialogTrigger render={<Button disabled={disabled} />}>
+      <DialogTrigger
+        render={<Button disabled={disabled} className={className} />}
+      >
         <Plus /> {t.scheduleInterview}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">

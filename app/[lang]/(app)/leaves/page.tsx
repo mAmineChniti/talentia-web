@@ -6,17 +6,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type * as z from 'zod';
 import {
   CalendarClock,
+  CalendarDays,
   Check,
+  CheckCircle2,
   Plus,
-  ThumbsDown,
   ThumbsUp,
   X,
+  XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
 import { useSession } from '@/hooks/use-session';
+import { hasMinimumRole } from '@/lib/rbac';
 import { createLeaveSchema, LEAVE_TYPES } from '@/lib/schemas/leaves';
 import { employeesApi } from '@/lib/services/employees';
 import { leavesApi } from '@/lib/services/leaves';
@@ -24,7 +27,7 @@ import { usersApi } from '@/lib/services/users';
 import type { EmployeeResponse } from '@/lib/types/employees';
 import type { LeaveResponse } from '@/lib/types/leaves';
 import type { User } from '@/lib/types/users';
-import { formatDate, fullName, leaveTypeLabel } from '@/lib/format';
+import { formatDate, fullName } from '@/lib/format';
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
 import { StatusBadge } from '@/components/status-badge';
@@ -61,10 +64,22 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+
+const leaveTypeTones: Record<string, string> = {
+  ANNUAL: 'bg-primary/10 text-primary ring-primary/20',
+  SICK: 'bg-chart-4/10 text-chart-4 ring-chart-4/20',
+  MATERNITY: 'bg-chart-5/10 text-chart-5 ring-chart-5/20',
+  PATERNITY: 'bg-chart-2/10 text-chart-2 ring-chart-2/20',
+  UNPAID: 'bg-muted text-muted-foreground ring-muted-foreground/20',
+  EXCEPTIONAL: 'bg-chart-3/10 text-chart-3 ring-chart-3/20',
+};
 
 type LeaveFormValues = z.infer<ReturnType<typeof createLeaveSchema>>;
 
@@ -92,11 +107,20 @@ export default function LeavesPage() {
     return (leaves ?? []).filter((l) => l.status === tab);
   }, [leaves, tab]);
 
+  const tabCount: Record<string, number> = {
+    all: leaves?.length ?? 0,
+    PENDING: pending,
+    APPROVED: approved,
+    REJECTED: rejected,
+  };
+
   return (
     <div className="grid gap-6">
       <PageHeader
+        kicker={t.all}
         title={t.title}
         description={t.description}
+        icon={<CalendarDays className="size-6" />}
         actions={<RequestLeaveDialog />}
       />
 
@@ -112,14 +136,14 @@ export default function LeavesPage() {
           label={t.approved}
           value={approved}
           hint={t.approvedHint}
-          icon={<ThumbsUp className="size-5" />}
+          icon={<CheckCircle2 className="size-5" />}
           accent="success"
         />
         <StatCard
           label={t.rejected}
           value={rejected}
           hint={t.rejectedHint}
-          icon={<ThumbsDown className="size-5" />}
+          icon={<XCircle className="size-5" />}
           accent="danger"
         />
         <StatCard
@@ -131,14 +155,34 @@ export default function LeavesPage() {
         />
       </div>
 
-      <Card className="rounded-lg py-0">
-        <CardContent className="space-y-4 py-4">
+      <Card className="overflow-hidden rounded-2xl py-0 shadow-sm">
+        <CardContent className="space-y-4 p-4 sm:p-5">
           <Tabs value={tab} onValueChange={setTab}>
-            <TabsList>
-              <TabsTrigger value="all">{t.all}</TabsTrigger>
-              <TabsTrigger value="PENDING">{t.pending}</TabsTrigger>
-              <TabsTrigger value="APPROVED">{t.approved}</TabsTrigger>
-              <TabsTrigger value="REJECTED">{t.rejected}</TabsTrigger>
+            <TabsList className="bg-muted/50">
+              <TabsTrigger value="all">
+                {t.all}
+                <span className="bg-muted text-muted-foreground ms-1.5 rounded-full px-1.5 text-[10px] font-semibold">
+                  {tabCount.all}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="PENDING">
+                {t.pending}
+                <span className="bg-chart-3/15 text-chart-3 ms-1.5 rounded-full px-1.5 text-[10px] font-semibold">
+                  {tabCount.PENDING}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="APPROVED">
+                {t.approved}
+                <span className="bg-chart-2/15 text-chart-2 ms-1.5 rounded-full px-1.5 text-[10px] font-semibold">
+                  {tabCount.APPROVED}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="REJECTED">
+                {t.rejected}
+                <span className="bg-destructive/15 text-destructive ms-1.5 rounded-full px-1.5 text-[10px] font-semibold">
+                  {tabCount.REJECTED}
+                </span>
+              </TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -147,7 +191,7 @@ export default function LeavesPage() {
           ) : loading ? (
             <div className="space-y-3">
               {Array.from({ length: 6 }, (_, i) => {
-                return <Skeleton key={i} className="h-12 w-full" />;
+                return <Skeleton key={i} className="h-14 w-full" />;
               })}
             </div>
           ) : filtered.length === 0 ? (
@@ -171,10 +215,10 @@ export default function LeavesPage() {
               action={<RequestLeaveDialog />}
             />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="-mx-4 overflow-x-auto px-4 sm:-mx-5 sm:px-5">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
                     <TableHead>{t.employee}</TableHead>
                     <TableHead>{t.type}</TableHead>
                     <TableHead>{t.from}</TableHead>
@@ -182,9 +226,7 @@ export default function LeavesPage() {
                     <TableHead>{t.daysLabel}</TableHead>
                     <TableHead>{t.reason}</TableHead>
                     <TableHead>{t.status}</TableHead>
-                    <TableHead className="w-28 text-right">
-                      {t.actions}
-                    </TableHead>
+                    <TableHead className="w-24 text-end">{t.actions}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -192,6 +234,15 @@ export default function LeavesPage() {
                     return <LeaveRow key={leave.id} leave={leave} />;
                   })}
                 </TableBody>
+                <TableFooter className="bg-muted/30">
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-2.5 text-xs">
+                      <span className="text-muted-foreground">
+                        {filtered.length} {t.all}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
               </Table>
             </div>
           )}
@@ -204,7 +255,8 @@ export default function LeavesPage() {
 function LeaveRow({ leave }: { leave: LeaveResponse }) {
   const { dict } = useI18n();
   const t = dict.leaves;
-  const { userId } = useSession();
+  const { userId, user } = useSession();
+  const canManage = hasMinimumRole(user?.role, 'HR');
 
   const approveMutation = useApiMutation<
     { id: number; userId: number },
@@ -236,50 +288,82 @@ function LeaveRow({ leave }: { leave: LeaveResponse }) {
   const isPending = leave.status === 'PENDING';
 
   return (
-    <TableRow>
-      <TableCell className="text-sm font-medium">
-        {leave.employeeName}
-      </TableCell>
-      <TableCell>{leaveTypeLabel[leave.type] ?? leave.type}</TableCell>
-      <TableCell>{formatDate(leave.startDate)}</TableCell>
-      <TableCell>{formatDate(leave.endDate)}</TableCell>
+    <TableRow className="group">
       <TableCell>
-        <span className="bg-muted rounded-full px-2 py-0.5 text-xs font-medium">
-          {`${leave.numberOfDays} ${leave.numberOfDays > 1 ? t.days : t.day}`}
+        <div className="flex items-center gap-3">
+          <Avatar className="ring-primary/10 size-9 ring-1">
+            <AvatarFallback>
+              {leave.employeeName?.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <span className="truncate text-sm font-medium">
+            {leave.employeeName}
+          </span>
+        </div>
+      </TableCell>
+      <TableCell>
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset',
+            leaveTypeTones[leave.type] ??
+              'bg-muted text-muted-foreground ring-muted-foreground/20'
+          )}
+        >
+          {dict.leaves.types[leave.type] ?? leave.type}
         </span>
       </TableCell>
-      <TableCell className="text-muted-foreground max-w-[200px] truncate">
+      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+        {formatDate(leave.startDate)}
+      </TableCell>
+      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+        {formatDate(leave.endDate)}
+      </TableCell>
+      <TableCell>
+        <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold">
+          {leave.numberOfDays} {leave.numberOfDays > 1 ? t.days : t.day}
+        </span>
+      </TableCell>
+      <TableCell className="text-muted-foreground max-w-[200px] truncate text-sm">
         {leave.reason || '—'}
       </TableCell>
       <TableCell>
         <StatusBadge status={leave.status} />
       </TableCell>
       <TableCell>
-        <div className="flex items-center justify-end gap-1.5">
-          {isPending ? (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => review('approve', leave.id)}
-                disabled={approveMutation.isPending}
-              >
-                <ThumbsUp /> {t.approve}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-destructive hover:text-destructive"
-                onClick={() => review('reject', leave.id)}
-                disabled={rejectMutation.isPending}
-              >
-                <X /> {t.reject}
-              </Button>
-            </>
-          ) : (
-            <span className="text-muted-foreground text-xs">—</span>
-          )}
-        </div>
+        {canManage ? (
+          <div className="flex items-center justify-end gap-1">
+            {isPending ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  className="border-chart-2/30 text-chart-2 hover:text-chart-2 hover:bg-chart-2/10"
+                  aria-label={t.approve}
+                  title={t.approve}
+                  onClick={() => review('approve', leave.id)}
+                  disabled={approveMutation.isPending}
+                >
+                  <ThumbsUp />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  className="border-destructive/30 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  aria-label={t.reject}
+                  title={t.reject}
+                  onClick={() => review('reject', leave.id)}
+                  disabled={rejectMutation.isPending}
+                >
+                  <X />
+                </Button>
+              </>
+            ) : (
+              <span className="text-muted-foreground/50 text-xs">—</span>
+            )}
+          </div>
+        ) : (
+          <span className="text-muted-foreground/50 text-xs">—</span>
+        )}
       </TableCell>
     </TableRow>
   );
@@ -395,7 +479,7 @@ function RequestLeaveDialog() {
                     <SelectContent>
                       {LEAVE_TYPES.map((type) => (
                         <SelectItem key={type} value={type}>
-                          {leaveTypeLabel[type]}
+                          {dict.leaves.types[type] ?? type}
                         </SelectItem>
                       ))}
                     </SelectContent>

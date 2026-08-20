@@ -9,7 +9,8 @@
     "backHome": "Retour à l'accueil",
     "errorTitle": "Une erreur est survenue",
     "errorMessage": "Une erreur inattendue s'est produite. Veuillez réessayer.",
-    "language": "Changer de langue"
+    "language": "Changer de langue",
+    "secureWorkspace": "Vos données RH, protégées et sécurisées"
   },
   "validation": {
     "selectUser": "Sélectionnez un utilisateur.",
@@ -55,10 +56,22 @@
       "secondaryCta": "Découvrir les fonctionnalités"
     },
     "stats": [
-      { "value": "10k+", "label": "Candidatures traitées" },
-      { "value": "120+", "label": "Entreprises clientes" },
-      { "value": "99.9%", "label": "Précision de la paie" },
-      { "value": "24/7", "label": "Pré-sélection IA des candidats" }
+      {
+        "value": "10k+",
+        "label": "Candidatures traitées"
+      },
+      {
+        "value": "120+",
+        "label": "Entreprises clientes"
+      },
+      {
+        "value": "99.9%",
+        "label": "Précision de la paie"
+      },
+      {
+        "value": "24/7",
+        "label": "Pré-sélection IA des candidats"
+      }
     ],
     "features": {
       "title": "Tout ce dont votre équipe RH a besoin",
@@ -98,19 +111,34 @@
           "name": "Tableau de bord",
           "desc": "Métriques RH en direct et recommandations IA"
         },
-        { "name": "Employés", "desc": "Annuaire, contrats et badges QR" },
+        {
+          "name": "Employés",
+          "desc": "Annuaire, contrats et badges QR"
+        },
         {
           "name": "Présences",
           "desc": "Entrées, sorties, heures supplémentaires"
         },
-        { "name": "Congés", "desc": "Workflow de demandes et approbations" },
-        { "name": "Contrats", "desc": "Types, dates, salaires" },
-        { "name": "Paie", "desc": "Moteur de salaire net mensuel" },
+        {
+          "name": "Congés",
+          "desc": "Workflow de demandes et approbations"
+        },
+        {
+          "name": "Contrats",
+          "desc": "Types, dates, salaires"
+        },
+        {
+          "name": "Paie",
+          "desc": "Moteur de salaire net mensuel"
+        },
         {
           "name": "Bulletins de paie",
           "desc": "Génération et téléchargement PDF"
         },
-        { "name": "Formations", "desc": "Inscriptions et achèvement" },
+        {
+          "name": "Formations",
+          "desc": "Inscriptions et achèvement"
+        },
         {
           "name": "Recrutement",
           "desc": "Publications, candidatures et entretiens"
@@ -198,7 +226,9 @@
       "rights": "Tous droits réservés.",
       "privacy": "Confidentialité",
       "terms": "Conditions",
-      "contact": "Contact"
+      "legal": "Légal",
+      "product": "Produit",
+      "account": "Compte"
     },
     "nav": {
       "features": "Fonctionnalités",
@@ -206,7 +236,8 @@
       "testimonials": "Clients",
       "pricing": "Tarifs",
       "login": "Se connecter",
-      "register": "Commencer"
+      "register": "Commencer",
+      "dashboard": "Tableau de bord"
     }
   },
   "login": {
@@ -268,8 +299,7 @@
     "payslips": "Bulletins de paie",
     "development": "Développement",
     "trainings": "Formations",
-    "recruitment": "Recrutement",
-    "version": "TalentIA · v0.1.0"
+    "recruitment": "Recrutement"
   },
   "header": {
     "home": "Accueil",
@@ -340,7 +370,9 @@
       "url": "https://…",
       "aboutme": "Une courte présentation…",
       "newPassword": "Laisser vide pour conserver"
-    }
+    },
+    "photo": "Photo de profil",
+    "photoHint": "PNG, JPG ou GIF — 2 Mo max"
   },
   "states": {
     "errorTitle": "Impossible de charger les données",
@@ -403,7 +435,10 @@
     "viewAll": "Tout voir",
     "noPendingLeaves": "Aucune demande de congé en attente.",
     "day": "jour",
-    "days": "jours"
+    "days": "jours",
+    "insights": "Insights IA",
+    "quickActions": "Actions rapides",
+    "openLeaves": "Congés à traiter"
   },
   "employees": {
     "title": "Employés",
@@ -440,7 +475,13 @@
     "addEmployeeButton": "Ajouter l'employé",
     "successAdded": "Employé ajouté",
     "successModified": "Employé modifié",
-    "successDeleted": "Employé supprimé"
+    "successDeleted": "Employé supprimé",
+    "employeesTotal": "Effectif total",
+    "departments": "Départements",
+    "allDepartments": "Tous les départements",
+    "inactive": "inactifs",
+    "employees": "employés",
+    "active": "actifs"
   },
   "attendance": {
     "title": "Présences",
@@ -563,7 +604,15 @@
     "sendRequest": "Envoyer la demande",
     "successSent": "Demande envoyée",
     "day": "jour",
-    "days": "jours"
+    "days": "jours",
+    "types": {
+      "ANNUAL": "Congé annuel",
+      "SICK": "Congé maladie",
+      "MATERNITY": "Maternité",
+      "PATERNITY": "Paternité",
+      "UNPAID": "Sans solde",
+      "EXCEPTIONAL": "Exceptionnel"
+    }
   },
   "payroll": {
     "title": "Paie",

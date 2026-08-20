@@ -57,6 +57,7 @@ function isProtectedPath(pathname: string, locale: Locale): boolean {
 
 export function proxy(request: NextRequest) {
   const session = request.cookies.get(SESSION_COOKIE);
+  const userCookie = request.cookies.get(USER_COOKIE);
 
   const pathname = request.nextUrl.pathname;
 
@@ -98,7 +99,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (!session && isProtectedPath(pathname, locale)) {
+  if ((!session || !userCookie) && isProtectedPath(pathname, locale)) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = `/${locale}/login`;
     loginUrl.search = '';

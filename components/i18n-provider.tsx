@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import type { Dictionary } from '@/get-dictionary';
 import type { Locale } from '@/i18n-config';
+import { setFormatLocale } from '@/lib/format';
 
 type I18nContextValue = {
   lang: Locale;
@@ -26,6 +27,10 @@ export function I18nProvider({
   dict: Dictionary;
   children: React.ReactNode;
 }) {
+  React.useEffect(() => {
+    setFormatLocale(lang);
+  }, [lang]);
+
   const value = React.useMemo(() => ({ lang, dir, dict }), [lang, dir, dict]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

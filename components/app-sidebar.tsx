@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  BarChart3,
   BriefcaseBusiness,
   CalendarDays,
   FileText,
@@ -20,7 +19,6 @@ import { usePathname } from 'next/navigation';
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -34,6 +32,7 @@ import {
 import { useI18n } from '@/components/i18n-provider';
 import { useSession } from '@/hooks/use-session';
 import { canAccessRoute } from '@/lib/rbac';
+import { cn } from '@/lib/utils';
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -91,20 +90,22 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-1.5">
-          <div className="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-lg shadow-sm">
-            <Sparkles className="size-4" />
+        <div className="flex items-center gap-2.5 px-2 py-2">
+          <div className="from-primary to-brand-2 shadow-primary/30 relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br shadow-lg">
+            <div className="bg-primary-foreground/30 absolute -top-2 -right-2 size-6 rounded-full blur-md" />
+            <Sparkles className="text-primary-foreground size-4.5" />
           </div>
           <div className="flex min-w-0 flex-1 flex-col leading-tight">
-            <span className="truncate text-sm font-semibold tracking-tight">
+            <span className="font-heading truncate text-[15px] font-semibold tracking-tight">
               TalentIA
             </span>
             <span className="text-muted-foreground truncate text-[11px]">
               {s.suite}
             </span>
           </div>
-          <SidebarTrigger className="-mr-1 ml-auto lg:hidden" />
+          <SidebarTrigger className="ms-auto -me-1 lg:hidden" />
         </div>
+        <div className="from-primary/40 mx-2 h-px bg-linear-to-r to-transparent" />
       </SidebarHeader>
       <SidebarContent>
         {navMain
@@ -117,7 +118,9 @@ export function AppSidebar() {
           .filter((group) => group.items.length > 0)
           .map((group) => (
             <SidebarGroup key={group.label}>
-              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+              <SidebarGroupLabel className="px-3 text-[10.5px] font-semibold tracking-widest uppercase opacity-70">
+                {group.label}
+              </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {group.items.map((item) => {
@@ -132,9 +135,22 @@ export function AppSidebar() {
                           isActive={isActive}
                           tooltip={title}
                           data-active={isActive || undefined}
+                          className={cn(
+                            'group/menu-button rounded-lg px-2.5 transition-colors',
+                            'data-active:from-primary/12 data-active:to-brand-2/8 data-active:text-primary data-active:bg-linear-to-r data-active:shadow-sm',
+                            'data-active:font-semibold',
+                            !isActive &&
+                              'transition-transform hover:translate-x-0.5'
+                          )}
                         >
-                          <item.icon />
+                          <item.icon
+                            className={cn(isActive && 'text-primary')}
+                            data-sidebar-icon
+                          />
                           <span>{title}</span>
+                          {isActive && (
+                            <span className="from-primary to-brand-2 ms-auto h-1.5 w-1.5 shrink-0 rounded-full bg-linear-to-br" />
+                          )}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     );
@@ -144,12 +160,6 @@ export function AppSidebar() {
             </SidebarGroup>
           ))}
       </SidebarContent>
-      <SidebarFooter>
-        <div className="text-muted-foreground flex items-center gap-2 px-2 py-1 text-[11px]">
-          <BarChart3 className="size-3.5" />
-          <span className="truncate">{s.version}</span>
-        </div>
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

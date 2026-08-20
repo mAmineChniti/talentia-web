@@ -4,10 +4,20 @@ import * as React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type * as z from 'zod';
-import { MoreHorizontal, Pencil, Plus, Trash2, Users } from 'lucide-react';
+import {
+  Briefcase,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  Users,
+} from 'lucide-react';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
+import { useSession } from '@/hooks/use-session';
+import { hasMinimumRole } from '@/lib/rbac';
 import { createEmployeeSchema } from '@/lib/schemas/employees';
 import { employeesApi } from '@/lib/services/employees';
 import { usersApi } from '@/lib/services/users';
@@ -53,6 +63,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -62,11 +73,35 @@ import { toast } from 'sonner';
 
 const CONTRACT_TYPES = ['CDI', 'CDD', 'Freelance', 'Internship'];
 
+const departmentTones: Record<string, string> = {
+  Engineering: 'bg-primary/10 text-primary ring-primary/20',
+  RH: 'bg-chart-4/10 text-chart-4 ring-chart-4/20',
+  Marketing: 'bg-chart-3/10 text-chart-3 ring-chart-3/20',
+  Finance: 'bg-chart-2/10 text-chart-2 ring-chart-2/20',
+  Ventes: 'bg-chart-5/10 text-chart-5 ring-chart-5/20',
+};
+
+function departmentChip(department: string | null | undefined = '—') {
+  const d = department;
+  const tone =
+    (d && departmentTones[d]) ??
+    'bg-muted text-muted-foreground ring-muted-foreground/15';
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${tone}`}
+    >
+      {d}
+    </span>
+  );
+}
+
 type EmployeeFormValues = z.infer<ReturnType<typeof createEmployeeSchema>>;
 
 export default function EmployeesPage() {
   const { dict } = useI18n();
   const t = dict.employees;
+  const { user } = useSession();
+  const canManage = hasMinimumRole(user?.role, 'HR');
   const {
     data: employees,
     loading,
@@ -75,6 +110,7 @@ export default function EmployeesPage() {
   } = useApi('employees.list', () => employeesApi.list());
   const users = useApi('users.list', () => usersApi.list());
   const [search, setSearch] = React.useState('');
+  const [department, setDepartment] = React.useState('all');
 
   const userMap = React.useMemo(() => {
     const m = new Map<number, User>();
@@ -84,10 +120,21 @@ export default function EmployeesPage() {
     return m;
   }, [users.data]);
 
+  const departments = React.useMemo(() => {
+    return [
+      ...new Set(
+        (employees ?? [])
+          .map((e) => e.department)
+          .filter((d): d is string => Boolean(d))
+      ),
+    ].toSorted((a, b) => a.localeCompare(b));
+  }, [employees]);
+
   const filtered = React.useMemo(() => {
-    if (!search.trim()) return employees ?? [];
     const q = search.toLowerCase();
     return (employees ?? []).filter((e) => {
+      if (department !== 'all' && e.department !== department) return false;
+      if (!search.trim()) return true;
       const u = userMap.get(e.userId);
       const name = fullName(u?.name, u?.lastname).toLowerCase();
       return (
@@ -97,27 +144,83 @@ export default function EmployeesPage() {
         e.employeeCode?.toLowerCase().includes(q)
       );
     });
-  }, [employees, search, userMap]);
+  }, [employees, search, department, userMap]);
+
+  const activeCount = (employees ?? []).filter((e) => e.active).length;
 
   return (
     <div className="grid gap-6">
       <PageHeader
+        kicker={t.departments ?? ''}
         title={t.title}
         description={t.count
           .split('{count}')
           .join(String(employees?.length ?? 0))}
-        actions={<AddEmployeeDialog users={users.data ?? []} />}
+        icon={<Users className="size-6" />}
+        actions={
+          canManage ? <AddEmployeeDialog users={users.data ?? []} /> : undefined
+        }
       />
 
-      <Card className="rounded-lg py-0">
-        <CardContent className="space-y-4 py-4">
-          <div className="flex items-center gap-3">
-            <Input
-              placeholder={t.searchPlaceholder}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="max-w-sm"
-            />
+      {/* Summary strip */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <SummaryTile
+          label={t.employeesTotal ?? t.title}
+          value={employees?.length ?? 0}
+          hint={`${activeCount} ${t.active}`}
+          icon={<Users className="size-4" />}
+          tone="bg-primary/10 text-primary"
+        />
+        <SummaryTile
+          label={t.departments ?? 'Départements'}
+          value={departments.length}
+          hint={t.count.split('{count}').join(String(departments.length))}
+          icon={<Briefcase className="size-4" />}
+          tone="bg-chart-4/10 text-chart-4"
+        />
+        <SummaryTile
+          label={t.active}
+          value={activeCount}
+          hint={`${(employees?.length ?? 0) - activeCount} ${t.inactive}`}
+          icon={<Users className="size-4" />}
+          tone="bg-chart-2/10 text-chart-2"
+        />
+      </div>
+
+      <Card className="overflow-hidden rounded-2xl py-0 shadow-sm">
+        <CardContent className="space-y-4 p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="text-muted-foreground absolute start-3 top-1/2 size-4 -translate-y-1/2" />
+              <Input
+                placeholder={t.searchPlaceholder}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="bg-muted/40 ps-9"
+              />
+            </div>
+            <Select
+              value={department}
+              onValueChange={(v) => setDepartment(v ?? 'all')}
+            >
+              <SelectTrigger
+                className="w-full sm:w-52"
+                aria-label={t.department}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t.allDepartments}</SelectItem>
+                {departments.map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {d}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-muted-foreground ms-auto hidden text-xs sm:inline">
+              {filtered.length}/{employees?.length ?? 0}
+            </span>
           </div>
 
           {error ? (
@@ -125,31 +228,37 @@ export default function EmployeesPage() {
           ) : loading ? (
             <div className="space-y-3">
               {Array.from({ length: 6 }, (_, i) => {
-                return <Skeleton key={i} className="h-12 w-full" />;
+                return <Skeleton key={i} className="h-14 w-full" />;
               })}
             </div>
           ) : filtered.length === 0 ? (
             <EmptyState
               icon={<Users className="size-6" />}
-              title={search ? t.noResults : t.noEmployees}
-              description={search ? t.tryAnotherSearch : t.addFirstEmployee}
+              title={
+                search || department !== 'all' ? t.noResults : t.noEmployees
+              }
+              description={
+                search || department !== 'all'
+                  ? t.tryAnotherSearch
+                  : t.addFirstEmployee
+              }
               action={
-                search ? undefined : (
-                  <AddEmployeeDialog users={users.data ?? []} />
-                )
+                search || department !== 'all'
+                  ? undefined
+                  : canManage && <AddEmployeeDialog users={users.data ?? []} />
               }
             />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="-mx-4 overflow-x-auto px-4 sm:-mx-5 sm:px-5">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
                     <TableHead>{t.employee}</TableHead>
                     <TableHead>{t.code}</TableHead>
                     <TableHead>{t.department}</TableHead>
                     <TableHead>{t.position}</TableHead>
                     <TableHead>{t.hireDate}</TableHead>
-                    <TableHead>{t.salary}</TableHead>
+                    <TableHead className="text-end">{t.salary}</TableHead>
                     <TableHead>{t.status}</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
@@ -158,10 +267,10 @@ export default function EmployeesPage() {
                   {filtered.map((e) => {
                     const u = userMap.get(e.userId);
                     return (
-                      <TableRow key={e.id}>
+                      <TableRow key={e.id} className="group">
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <Avatar className="size-8">
+                            <Avatar className="ring-primary/10 size-9 ring-1">
                               <AvatarImage src={u?.profileImageUrl} />
                               <AvatarFallback>
                                 {initials(u?.name, u?.lastname)}
@@ -177,13 +286,19 @@ export default function EmployeesPage() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="font-mono text-xs">
-                          {e.employeeCode}
+                        <TableCell>
+                          <span className="bg-muted text-muted-foreground rounded-md px-2 py-1 font-mono text-[11px]">
+                            {e.employeeCode}
+                          </span>
                         </TableCell>
-                        <TableCell>{e.department || '—'}</TableCell>
-                        <TableCell>{e.position || '—'}</TableCell>
-                        <TableCell>{formatDate(e.hireDate)}</TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell>{departmentChip(e.department)}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {e.position || '—'}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {formatDate(e.hireDate)}
+                        </TableCell>
+                        <TableCell className="text-end font-semibold tabular-nums">
                           {formatCurrency(e.salary)}
                         </TableCell>
                         <TableCell>
@@ -198,11 +313,56 @@ export default function EmployeesPage() {
                     );
                   })}
                 </TableBody>
+                <TableFooter className="bg-muted/30">
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-2.5 text-xs">
+                      <span className="text-muted-foreground">
+                        {filtered.length}{' '}
+                        {filtered.length > 1 ? t.employees : t.employee}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
               </Table>
             </div>
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function SummaryTile({
+  label,
+  value,
+  hint,
+  icon,
+  tone,
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+  icon: React.ReactNode;
+  tone: string;
+}) {
+  return (
+    <div className="bg-card flex items-center gap-3 rounded-2xl border p-4 shadow-sm">
+      <div
+        className={`flex size-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset ${tone}`}
+      >
+        {icon}
+      </div>
+      <div className="min-w-0">
+        <p className="font-heading text-lg leading-tight font-semibold tracking-tight tabular-nums">
+          {value}
+        </p>
+        <p className="text-muted-foreground truncate text-xs">{label}</p>
+        {hint && (
+          <p className="text-muted-foreground/70 truncate text-[11px]">
+            {hint}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -216,6 +376,8 @@ function RowActions({
 }) {
   const { dict } = useI18n();
   const t = dict.employees;
+  const { user } = useSession();
+  const canManage = hasMinimumRole(user?.role, 'HR');
   const [open, setOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const u = userMap.get(employee.userId);
@@ -231,6 +393,8 @@ function RowActions({
       onError: (err) => toast.error(err.message),
     }
   );
+
+  if (!canManage) return;
 
   return (
     <>

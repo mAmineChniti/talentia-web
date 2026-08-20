@@ -4,11 +4,20 @@ import * as React from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type * as z from 'zod';
-import { Plus, Sparkles, Wallet } from 'lucide-react';
+import {
+  ArrowDownToLine,
+  HandCoins,
+  Plus,
+  Sparkles,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
+import { useSession } from '@/hooks/use-session';
+import { hasMinimumRole } from '@/lib/rbac';
 import {
   createPayrollSchema,
   createGeneratePayrollSchema,
@@ -53,10 +62,12 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const thisYear = () => {
   const now = new Date();
@@ -79,6 +90,8 @@ const periodLabel = (month: number, year: number) =>
 export default function PayrollPage() {
   const { dict } = useI18n();
   const t = dict.payroll;
+  const { user } = useSession();
+  const canManage = hasMinimumRole(user?.role, 'ADMIN');
   const {
     data: payroll,
     loading,
@@ -105,20 +118,24 @@ export default function PayrollPage() {
   return (
     <div className="grid gap-6">
       <PageHeader
+        kicker={t.period}
         title={t.title}
         description={t.description
           .split('{count}')
           .join(String(count))
           .split('{periods}')
           .join(String(periodSet.size))}
+        icon={<Wallet className="size-6" />}
         actions={
-          <>
-            <GenerateAllDialog />
-            <AddPayrollDialog
-              employees={employees.data ?? []}
-              userMap={userMap}
-            />
-          </>
+          canManage ? (
+            <>
+              <GenerateAllDialog />
+              <AddPayrollDialog
+                employees={employees.data ?? []}
+                userMap={userMap}
+              />
+            </>
+          ) : undefined
         }
       />
 
@@ -127,7 +144,7 @@ export default function PayrollPage() {
           label={t.netTotal}
           value={formatCurrency(totalNet)}
           hint={t.netTotalHint}
-          icon={<Wallet className="size-5" />}
+          icon={<HandCoins className="size-5" />}
           accent="success"
         />
         <StatCard
@@ -141,26 +158,26 @@ export default function PayrollPage() {
           label={t.deductions}
           value={formatCurrency(totalDeductions)}
           hint={t.deductionsHint}
-          icon={<Wallet className="size-5" />}
+          icon={<ArrowDownToLine className="size-5" />}
           accent="danger"
         />
         <StatCard
           label={t.averageNet}
           value={formatCurrency(count > 0 ? totalNet / count : 0)}
           hint={t.averageNetHint}
-          icon={<Wallet className="size-5" />}
+          icon={<TrendingUp className="size-5" />}
           accent="info"
         />
       </div>
 
-      <Card className="rounded-lg py-0">
-        <CardContent className="py-4">
+      <Card className="overflow-hidden rounded-2xl py-0 shadow-sm">
+        <CardContent className="p-4 sm:p-5">
           {error ? (
             <ErrorState onRetry={refetch} description={error.message} />
           ) : loading ? (
             <div className="space-y-3">
               {Array.from({ length: 6 }, (_, i) => {
-                return <Skeleton key={i} className="h-12 w-full" />;
+                return <Skeleton key={i} className="h-14 w-full" />;
               })}
             </div>
           ) : count === 0 ? (
@@ -168,20 +185,20 @@ export default function PayrollPage() {
               icon={<Wallet className="size-6" />}
               title={t.noPayroll}
               description={t.noPayrollDesc}
-              action={<GenerateAllDialog />}
+              action={canManage ? <GenerateAllDialog /> : undefined}
             />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="-mx-4 overflow-x-auto px-4 sm:-mx-5 sm:px-5">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
                     <TableHead>{t.employee}</TableHead>
                     <TableHead>{t.period}</TableHead>
-                    <TableHead className="text-right">{t.baseSalary}</TableHead>
-                    <TableHead className="text-right">{t.bonusLabel}</TableHead>
-                    <TableHead className="text-right">{t.overtime}</TableHead>
-                    <TableHead className="text-right">{t.deduction}</TableHead>
-                    <TableHead className="text-right">{t.net}</TableHead>
+                    <TableHead className="text-end">{t.baseSalary}</TableHead>
+                    <TableHead className="text-end">{t.bonusLabel}</TableHead>
+                    <TableHead className="text-end">{t.overtime}</TableHead>
+                    <TableHead className="text-end">{t.deduction}</TableHead>
+                    <TableHead className="text-end">{t.net}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -193,34 +210,73 @@ export default function PayrollPage() {
                         a.employeeName.localeCompare(b.employeeName)
                       );
                     })
-                    .map((p) => (
-                      <TableRow key={p.id}>
-                        <TableCell className="text-sm font-medium">
-                          {p.employeeName}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {periodLabel(p.month, p.year)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(p.baseSalary)}
-                        </TableCell>
-                        <TableCell className="text-chart-2 text-right">
-                          +{formatCurrency(p.bonus)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {p.overtime ? `+${formatCurrency(p.overtime)}` : '—'}
-                        </TableCell>
-                        <TableCell className="text-destructive text-right">
-                          {p.deduction
-                            ? `−${formatCurrency(p.deduction)}`
-                            : '—'}
-                        </TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {formatCurrency(p.netSalary)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    .map((p) => {
+                      return (
+                        <TableRow key={p.id} className="group">
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="ring-primary/10 size-9 ring-1">
+                                <AvatarFallback>
+                                  {p.employeeName
+                                    ?.split(' ')
+                                    .map((n) => n[0])
+                                    .join('')
+                                    .slice(0, 2)
+                                    .toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="truncate text-sm font-medium">
+                                {p.employeeName}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="bg-primary/10 text-primary rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap">
+                              {periodLabel(p.month, p.year)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-end tabular-nums">
+                            {formatCurrency(p.baseSalary)}
+                          </TableCell>
+                          <TableCell className="text-chart-2 text-end tabular-nums">
+                            +{formatCurrency(p.bonus)}
+                          </TableCell>
+                          <TableCell className="text-end tabular-nums">
+                            {p.overtime ? (
+                              <span className="text-info">
+                                +{formatCurrency(p.overtime)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-end tabular-nums">
+                            {p.deduction ? (
+                              <span className="text-destructive">
+                                −{formatCurrency(p.deduction)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-end">
+                            <span className="bg-chart-2/10 text-chart-2 rounded-lg px-2.5 py-1 text-sm font-semibold tabular-nums">
+                              {formatCurrency(p.netSalary)}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                 </TableBody>
+                <TableFooter className="bg-muted/30">
+                  <TableRow>
+                    <TableCell colSpan={7} className="py-2.5 text-xs">
+                      <span className="text-muted-foreground">
+                        {count} {t.employee} · {periodSet.size} {t.period}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
               </Table>
             </div>
           )}

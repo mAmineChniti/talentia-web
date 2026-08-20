@@ -1,11 +1,20 @@
 'use client';
 
 import * as React from 'react';
-import { Download, FileText, Sparkles, Wallet } from 'lucide-react';
+import {
+  BadgeCheck,
+  CalendarClock,
+  Download,
+  FileText,
+  Sparkles,
+  Wallet,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
+import { useSession } from '@/hooks/use-session';
+import { hasMinimumRole } from '@/lib/rbac';
 import { payrollApi } from '@/lib/services/payroll';
 import { payslipsApi } from '@/lib/services/payslips';
 import type { PayrollResponse } from '@/lib/types/payroll';
@@ -37,10 +46,12 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const periodKey = (employeeName: string, month: number, year: number) =>
   `${employeeName}|${month}|${year}`;
@@ -50,6 +61,8 @@ const basename = (path: string) => path.split(/[\\/]/).pop() ?? path;
 export default function PayslipsPage() {
   const { dict } = useI18n();
   const t = dict.payslips;
+  const { user } = useSession();
+  const canManage = hasMinimumRole(user?.role, 'ADMIN');
   const {
     data: payslips,
     loading,
@@ -75,17 +88,21 @@ export default function PayslipsPage() {
   return (
     <div className="grid gap-6">
       <PageHeader
+        kicker={t.pdf}
         title={t.title}
         description={t.description
           .split('{count}')
           .join(String(count))
           .split('{s}')
           .join(count > 1 ? 's' : '')}
+        icon={<FileText className="size-6" />}
         actions={
-          <GeneratePayslipDialog
-            payrolls={availablePayrolls}
-            disabled={availablePayrolls.length === 0}
-          />
+          canManage ? (
+            <GeneratePayslipDialog
+              payrolls={availablePayrolls}
+              disabled={availablePayrolls.length === 0}
+            />
+          ) : undefined
         }
       />
 
@@ -94,7 +111,7 @@ export default function PayslipsPage() {
           label={t.issued}
           value={count}
           hint={t.issuedHint}
-          icon={<FileText className="size-5" />}
+          icon={<BadgeCheck className="size-5" />}
           accent="success"
         />
         <StatCard
@@ -120,14 +137,14 @@ export default function PayslipsPage() {
         />
       </div>
 
-      <Card className="rounded-lg py-0">
-        <CardContent className="py-4">
+      <Card className="overflow-hidden rounded-2xl py-0 shadow-sm">
+        <CardContent className="p-4 sm:p-5">
           {error ? (
             <ErrorState onRetry={refetch} description={error.message} />
           ) : loading ? (
             <div className="space-y-3">
               {Array.from({ length: 6 }, (_, i) => {
-                return <Skeleton key={i} className="h-12 w-full" />;
+                return <Skeleton key={i} className="h-14 w-full" />;
               })}
             </div>
           ) : count === 0 ? (
@@ -136,24 +153,26 @@ export default function PayslipsPage() {
               title={t.noPayslips}
               description={t.noPayslipsDesc}
               action={
-                <GeneratePayslipDialog
-                  payrolls={availablePayrolls}
-                  disabled={availablePayrolls.length === 0}
-                />
+                canManage ? (
+                  <GeneratePayslipDialog
+                    payrolls={availablePayrolls}
+                    disabled={availablePayrolls.length === 0}
+                  />
+                ) : undefined
               }
             />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="-mx-4 overflow-x-auto px-4 sm:-mx-5 sm:px-5">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
                     <TableHead>{t.employee}</TableHead>
                     <TableHead>{t.period}</TableHead>
-                    <TableHead className="text-right">{t.baseSalary}</TableHead>
-                    <TableHead className="text-right">{t.bonus}</TableHead>
-                    <TableHead className="text-right">{t.netSalary}</TableHead>
+                    <TableHead className="text-end">{t.baseSalary}</TableHead>
+                    <TableHead className="text-end">{t.bonus}</TableHead>
+                    <TableHead className="text-end">{t.netSalary}</TableHead>
                     <TableHead>{t.generated}</TableHead>
-                    <TableHead className="w-32 text-right">PDF</TableHead>
+                    <TableHead className="w-32 text-end">PDF</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -166,26 +185,47 @@ export default function PayslipsPage() {
                       );
                     })
                     .map((p) => (
-                      <TableRow key={p.id}>
-                        <TableCell className="text-sm font-medium">
-                          {p.employeeName}
+                      <TableRow key={p.id} className="group">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="ring-primary/10 size-9 ring-1">
+                              <AvatarFallback>
+                                {p.employeeName
+                                  ?.split(' ')
+                                  .map((n) => n[0])
+                                  .join('')
+                                  .slice(0, 2)
+                                  .toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="truncate text-sm font-medium">
+                              {p.employeeName}
+                            </span>
+                          </div>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {monthName(p.month)} {p.year}
+                        <TableCell>
+                          <span className="bg-primary/10 text-primary rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap">
+                            {monthName(p.month)} {p.year}
+                          </span>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-muted-foreground text-end tabular-nums">
                           {formatCurrency(p.baseSalary)}
                         </TableCell>
-                        <TableCell className="text-chart-2 text-right">
+                        <TableCell className="text-chart-2 text-end tabular-nums">
                           +{formatCurrency(p.bonus)}
                         </TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {formatCurrency(p.netSalary)}
+                        <TableCell className="text-end">
+                          <span className="bg-chart-2/10 text-chart-2 rounded-lg px-2.5 py-1 text-sm font-semibold tabular-nums">
+                            {formatCurrency(p.netSalary)}
+                          </span>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {formatDateTime(p.generatedDate)}
+                        <TableCell>
+                          <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs whitespace-nowrap">
+                            <CalendarClock className="size-3.5" />
+                            {formatDateTime(p.generatedDate)}
+                          </span>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-end">
                           {p.pdfPath ? (
                             <Button
                               variant="outline"
@@ -212,6 +252,15 @@ export default function PayslipsPage() {
                       </TableRow>
                     ))}
                 </TableBody>
+                <TableFooter className="bg-muted/30">
+                  <TableRow>
+                    <TableCell colSpan={7} className="py-2.5 text-xs">
+                      <span className="text-muted-foreground">
+                        {count} {t.issued}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
               </Table>
             </div>
           )}

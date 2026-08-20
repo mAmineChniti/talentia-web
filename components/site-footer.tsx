@@ -9,104 +9,97 @@ import { useI18n } from '@/components/i18n-provider';
 export function SiteFooter() {
   const { dict, lang } = useI18n();
   const f = dict.landing.footer;
+  const landing = dict.landing;
   const now = new Date();
+
+  const columns = [
+    {
+      title: f.product,
+      links: landing.modules.items.map((m) => ({
+        name: m.name,
+        href: `/${lang}/#modules`,
+        link: true,
+      })),
+    },
+    {
+      title: f.account,
+      links: [
+        { name: landing.nav.login, href: `/${lang}/login`, link: true },
+        { name: landing.nav.register, href: `/${lang}/register`, link: true },
+        { name: landing.nav.dashboard, href: `/${lang}/dashboard`, link: true },
+      ],
+    },
+    {
+      title: f.legal,
+      links: [
+        { name: f.privacy, href: '#', link: false },
+        { name: f.terms, href: '#', link: false },
+      ],
+    },
+  ];
 
   return (
     <footer className="bg-muted/20 border-t">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.6fr_1fr_1fr_1fr]">
-        <div className="space-y-4">
-          <Link href={`/${lang}`} className="flex items-center gap-2.5">
-            <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-xl">
-              <Sparkles className="size-4" />
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-10 py-14 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="col-span-2 space-y-4 sm:col-span-3 lg:col-span-3">
+            <Link href={`/${lang}`} className="flex w-fit items-center gap-2.5">
+              <div className="from-primary to-brand-2 shadow-primary/30 flex size-9 items-center justify-center rounded-xl bg-linear-to-br shadow-lg">
+                <Sparkles className="text-primary-foreground size-4.5" />
+              </div>
+              <span className="font-heading text-lg font-bold tracking-tight">
+                TalentIA
+              </span>
+            </Link>
+            <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
+              {dict.metadata.description}
+            </p>
+            <p className="text-muted-foreground/70 text-xs">
+              © {now.getFullYear()} TalentIA. {f.rights}
+            </p>
+          </div>
+
+          {columns.map((col) => (
+            <div key={col.title} className="space-y-3.5">
+              <p className="text-foreground text-xs font-semibold tracking-widest uppercase">
+                {col.title}
+              </p>
+              <ul className="space-y-2.5 text-sm">
+                {col.links.map((link) => (
+                  <li key={link.name}>
+                    {link.link ? (
+                      <Link
+                        href={link.href}
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {link.name}
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground/80">
+                        {link.name}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <span className="font-display text-base font-semibold tracking-tight">
-              TalentIA
-            </span>
-          </Link>
-          <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
-            {dict.metadata.description}
-          </p>
-          <p className="text-muted-foreground/70 text-xs">
+          ))}
+        </div>
+
+        <div className="text-muted-foreground flex flex-col items-center justify-between gap-3 border-t py-6 text-xs sm:flex-row">
+          <p>
             © {now.getFullYear()} TalentIA. {f.rights}
           </p>
-        </div>
-
-        <div className="space-y-3">
-          <p className="font-display text-foreground text-xs font-semibold tracking-wide uppercase">
-            {dict.landing.modules.title}
-          </p>
-          <ul className="space-y-2.5 text-sm">
-            {dict.landing.modules.items.slice(0, 5).map((m) => (
-              <li key={m.name}>
-                <Link
-                  href="#modules"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {m.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="space-y-3">
-          <p className="font-display text-foreground text-xs font-semibold tracking-wide uppercase">
-            {dict.landing.features.title}
-          </p>
-          <ul className="space-y-2.5 text-sm">
-            {dict.landing.features.items.slice(0, 5).map((fItem) => (
-              <li key={fItem.title}>
-                <Link
-                  href="#features"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {fItem.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="space-y-3">
-          <p className="font-display text-foreground text-xs font-semibold tracking-wide uppercase">
-            {f.contact}
-          </p>
-          <ul className="space-y-2.5 text-sm">
-            <li>
-              <Link
-                href="#privacy"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {f.privacy}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="#terms"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {f.terms}
-              </Link>
-            </li>
-            <li>
-              <Link
-                href={`/${lang}/login`}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {dict.landing.nav.login}
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <div className="border-t">
-        <div className="text-muted-foreground/70 mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-4 text-xs sm:flex-row sm:px-6">
-          <span>
-            © {now.getFullYear()} TalentIA. {f.rights}
-          </span>
-          <span className="font-code text-[10px] tracking-tight">
-            {dict.sidebar.version}
-          </span>
+          <div className="flex items-center gap-5">
+            <span>{f.privacy}</span>
+            <span>{f.terms}</span>
+            <Link
+              href={`/${lang}/register`}
+              className="from-primary to-brand-2 text-primary-foreground rounded-full bg-linear-to-r px-3 py-1 font-medium shadow-sm"
+            >
+              {landing.nav.register}
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

@@ -9,7 +9,8 @@
     "backHome": "Back to home",
     "errorTitle": "Something went wrong",
     "errorMessage": "An unexpected error occurred. Please try again.",
-    "language": "Switch language"
+    "language": "Switch language",
+    "secureWorkspace": "Your HR data, protected and secure"
   },
   "validation": {
     "selectUser": "Select a user.",
@@ -55,10 +56,22 @@
       "secondaryCta": "Explore the features"
     },
     "stats": [
-      { "value": "10k+", "label": "Applications processed" },
-      { "value": "120+", "label": "Customer companies" },
-      { "value": "99.9%", "label": "Payroll accuracy" },
-      { "value": "24/7", "label": "AI candidate screening" }
+      {
+        "value": "10k+",
+        "label": "Applications processed"
+      },
+      {
+        "value": "120+",
+        "label": "Customer companies"
+      },
+      {
+        "value": "99.9%",
+        "label": "Payroll accuracy"
+      },
+      {
+        "value": "24/7",
+        "label": "AI candidate screening"
+      }
     ],
     "features": {
       "title": "Everything your HR team needs",
@@ -98,13 +111,34 @@
           "name": "Dashboard",
           "desc": "Live HR metrics and AI recommendations"
         },
-        { "name": "Employees", "desc": "Directory, contracts and QR badges" },
-        { "name": "Attendance", "desc": "Check-ins, check-outs, overtime" },
-        { "name": "Leaves", "desc": "Request and approval workflow" },
-        { "name": "Contracts", "desc": "Types, dates, salaries" },
-        { "name": "Payroll", "desc": "Monthly net salary engine" },
-        { "name": "Payslips", "desc": "PDF generation and download" },
-        { "name": "Trainings", "desc": "Enrollment and completion" },
+        {
+          "name": "Employees",
+          "desc": "Directory, contracts and QR badges"
+        },
+        {
+          "name": "Attendance",
+          "desc": "Check-ins, check-outs, overtime"
+        },
+        {
+          "name": "Leaves",
+          "desc": "Request and approval workflow"
+        },
+        {
+          "name": "Contracts",
+          "desc": "Types, dates, salaries"
+        },
+        {
+          "name": "Payroll",
+          "desc": "Monthly net salary engine"
+        },
+        {
+          "name": "Payslips",
+          "desc": "PDF generation and download"
+        },
+        {
+          "name": "Trainings",
+          "desc": "Enrollment and completion"
+        },
         {
           "name": "Recruiting",
           "desc": "Postings, applications and interviews"
@@ -192,7 +226,9 @@
       "rights": "All rights reserved.",
       "privacy": "Privacy",
       "terms": "Terms",
-      "contact": "Contact"
+      "legal": "Legal",
+      "product": "Product",
+      "account": "Account"
     },
     "nav": {
       "features": "Features",
@@ -200,7 +236,8 @@
       "testimonials": "Customers",
       "pricing": "Pricing",
       "login": "Sign in",
-      "register": "Get started"
+      "register": "Get started",
+      "dashboard": "Dashboard"
     }
   },
   "login": {
@@ -262,8 +299,7 @@
     "payslips": "Payslips",
     "development": "Growth",
     "trainings": "Trainings",
-    "recruitment": "Recruiting",
-    "version": "TalentIA · v0.1.0"
+    "recruitment": "Recruiting"
   },
   "header": {
     "home": "Home",
@@ -334,7 +370,9 @@
       "url": "https://…",
       "aboutme": "A short introduction…",
       "newPassword": "Leave empty to keep it"
-    }
+    },
+    "photo": "Profile photo",
+    "photoHint": "PNG, JPG or GIF — 2 MB max"
   },
   "states": {
     "errorTitle": "Couldn't load data",
@@ -397,7 +435,10 @@
     "viewAll": "View all",
     "noPendingLeaves": "No pending leave requests.",
     "day": "day",
-    "days": "days"
+    "days": "days",
+    "insights": "AI Insights",
+    "quickActions": "Quick actions",
+    "openLeaves": "Leaves to review"
   },
   "employees": {
     "title": "Employees",
@@ -434,7 +475,13 @@
     "addEmployeeButton": "Add employee",
     "successAdded": "Employee added",
     "successModified": "Employee modified",
-    "successDeleted": "Employee deleted"
+    "successDeleted": "Employee deleted",
+    "employeesTotal": "Total headcount",
+    "departments": "Departments",
+    "allDepartments": "All departments",
+    "inactive": "inactive",
+    "employees": "employees",
+    "active": "active"
   },
   "attendance": {
     "title": "Attendance",
@@ -557,7 +604,15 @@
     "sendRequest": "Send request",
     "successSent": "Request sent",
     "day": "day",
-    "days": "days"
+    "days": "days",
+    "types": {
+      "ANNUAL": "Annual leave",
+      "SICK": "Sick leave",
+      "MATERNITY": "Maternity",
+      "PATERNITY": "Paternity",
+      "UNPAID": "Unpaid leave",
+      "EXCEPTIONAL": "Exceptional"
+    }
   },
   "payroll": {
     "title": "Payroll",

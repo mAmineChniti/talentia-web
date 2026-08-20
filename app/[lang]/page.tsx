@@ -18,6 +18,7 @@ import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { useI18n } from '@/components/i18n-provider';
 
@@ -47,7 +48,7 @@ export default function LandingPage() {
   const landing = dict.landing;
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
+    <div className="relative min-h-screen overflow-x-clip">
       <SiteHeader />
 
       {/* Hero */}
@@ -72,7 +73,7 @@ export default function LandingPage() {
             <Sparkles className="size-3" />
             {landing.badge}
           </Badge>
-          <h1 className="mx-auto max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
+          <h1 className="font-heading mx-auto max-w-3xl text-4xl font-bold tracking-tight text-balance sm:text-6xl">
             {landing.hero.title}
           </h1>
           <p className="text-muted-foreground mx-auto mt-6 max-w-2xl text-base text-pretty sm:text-lg">
@@ -104,7 +105,7 @@ export default function LandingPage() {
                 key={s.label}
                 className="bg-card/60 rounded-2xl border p-4 backdrop-blur-sm"
               >
-                <p className="text-2xl font-semibold tracking-tight">
+                <p className="font-heading text-2xl font-bold tracking-tight">
                   {s.value}
                 </p>
                 <p className="text-muted-foreground mt-1 text-xs">{s.label}</p>
@@ -117,7 +118,7 @@ export default function LandingPage() {
       {/* Features */}
       <section id="features" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h2 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
             {landing.features.title}
           </h2>
           <p className="text-muted-foreground mt-4">
@@ -132,7 +133,7 @@ export default function LandingPage() {
                 key={f.title}
                 className="group bg-card hover:shadow-primary/5 rounded-2xl border p-6 transition-all hover:-translate-y-0.5 hover:shadow-lg"
               >
-                <div className="bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground flex size-11 items-center justify-center rounded-xl transition-colors">
+                <div className="from-primary to-brand-2 text-primary-foreground group-hover:shadow-primary/30 flex size-11 items-center justify-center rounded-xl bg-linear-to-br shadow-md shadow-transparent transition-all group-hover:-translate-y-0.5">
                   <Icon className="size-5" />
                 </div>
                 <h3 className="mt-4 text-base font-semibold">{f.title}</h3>
@@ -147,7 +148,7 @@ export default function LandingPage() {
       <section id="modules" className="bg-muted/30 border-y">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h2 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
               {landing.modules.title}
             </h2>
             <p className="text-muted-foreground mt-4">
@@ -160,17 +161,18 @@ export default function LandingPage() {
               return (
                 <div
                   key={m.desc}
-                  className="bg-card hover:border-primary/40 flex items-center gap-3 rounded-xl border p-4 transition-colors"
+                  className="bg-card hover:border-primary/40 group flex items-center gap-3 rounded-xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <div className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg">
+                  <div className="from-primary/15 to-brand-2/15 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br ring-1 ring-black/5">
                     <Icon className="size-4" />
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{m.name}</p>
                     <p className="text-muted-foreground truncate text-xs">
                       {m.desc}
                     </p>
                   </div>
+                  <ArrowRight className="text-muted-foreground/50 group-hover:text-primary size-4 transition-all group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
                 </div>
               );
             })}
@@ -184,7 +186,7 @@ export default function LandingPage() {
         className="mx-auto max-w-6xl px-4 py-16 sm:px-6"
       >
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h2 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
             {landing.testimonials.title}
           </h2>
           <p className="text-muted-foreground mt-4">
@@ -210,7 +212,7 @@ export default function LandingPage() {
                 «{tt.quote}»
               </blockquote>
               <figcaption className="mt-4 flex items-center gap-3">
-                <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-full text-xs font-semibold">
+                <div className="from-primary/15 to-brand-2/15 text-primary flex size-9 items-center justify-center rounded-full bg-linear-to-br text-xs font-semibold ring-1 ring-black/5">
                   {tt.name
                     .split(' ')
                     .map((n) => n[0])
@@ -229,7 +231,7 @@ export default function LandingPage() {
       {/* Pricing */}
       <section id="pricing" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+          <h2 className="font-heading text-3xl font-bold tracking-tight sm:text-4xl">
             {landing.pricing.title}
           </h2>
           <p className="text-muted-foreground mt-4">
@@ -247,7 +249,7 @@ export default function LandingPage() {
               }
             >
               {p.highlight && (
-                <Badge className="absolute -top-3 left-6">
+                <Badge className="from-primary to-brand-2 absolute -top-3 left-6 bg-linear-to-r">
                   {landing.pricing.mostPopular}
                 </Badge>
               )}
@@ -255,7 +257,7 @@ export default function LandingPage() {
                 {p.name}
               </p>
               <p className="mt-3 flex items-baseline gap-1">
-                <span className="text-4xl font-semibold tracking-tight">
+                <span className="font-heading text-4xl font-bold tracking-tight">
                   {p.price}
                 </span>
                 {p.period && (
@@ -288,13 +290,13 @@ export default function LandingPage() {
 
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
-        <div className="from-primary text-primary-foreground to-chart-4 relative overflow-hidden rounded-3xl border bg-linear-to-tr px-6 py-16 text-center sm:px-16">
+        <div className="from-primary via-primary to-brand-2 text-primary-foreground shadow-primary/20 relative overflow-hidden rounded-3xl border bg-linear-to-tr px-6 py-16 text-center shadow-2xl sm:px-16">
           <div className="pointer-events-none absolute inset-0">
             <div className="bg-primary-foreground/10 absolute -top-20 right-10 h-64 w-64 rounded-full blur-3xl" />
             <div className="bg-primary-foreground/10 absolute -bottom-20 left-10 h-64 w-64 rounded-full blur-3xl" />
           </div>
           <div className="relative">
-            <h2 className="mx-auto max-w-xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            <h2 className="font-heading mx-auto max-w-xl text-3xl font-bold tracking-tight text-balance sm:text-4xl">
               {landing.cta.title}
             </h2>
             <p className="text-primary-foreground/80 mx-auto mt-4 max-w-lg text-pretty">
@@ -324,38 +326,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t">
-        <div className="text-muted-foreground mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm sm:flex-row sm:px-6">
-          <div className="flex items-center gap-2">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <Sparkles className="size-3.5" />
-            </div>
-            <span className="text-foreground font-medium">TalentIA</span>
-            <span>© 2026 TalentIA. {landing.footer.rights}</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <Link
-              href="#privacy"
-              className="hover:text-foreground transition-colors"
-            >
-              {landing.footer.privacy}
-            </Link>
-            <Link
-              href="#terms"
-              className="hover:text-foreground transition-colors"
-            >
-              {landing.footer.terms}
-            </Link>
-            <Link
-              href="#contact"
-              className="hover:text-foreground transition-colors"
-            >
-              {landing.footer.contact}
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

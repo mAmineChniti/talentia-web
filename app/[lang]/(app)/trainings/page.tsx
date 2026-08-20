@@ -5,8 +5,10 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type * as z from 'zod';
 import {
+  ArrowRight,
   CalendarDays,
-  Check,
+  CheckCircle2,
+  Clock3,
   GraduationCap,
   MapPin,
   Plus,
@@ -18,6 +20,8 @@ import { toast } from 'sonner';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
+import { useSession } from '@/hooks/use-session';
+import { hasMinimumRole } from '@/lib/rbac';
 import { createTrainingSchema } from '@/lib/schemas/trainings';
 import { employeesApi } from '@/lib/services/employees';
 import { trainingsApi } from '@/lib/services/trainings';
@@ -31,13 +35,7 @@ import { StatCard } from '@/components/stat-card';
 import { StatusBadge } from '@/components/status-badge';
 import { EmptyState, ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -64,12 +62,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 type TrainingFormValues = z.infer<ReturnType<typeof createTrainingSchema>>;
+
+const statusGradient: Record<string, string> = {
+  PLANNED: 'from-chart-4/25 to-chart-4/5 text-chart-4',
+  DONE: 'from-chart-2/25 to-chart-2/5 text-chart-2',
+  CANCELLED: 'from-destructive/20 to-destructive/5 text-destructive',
+};
 
 export default function TrainingsPage() {
   const { dict } = useI18n();
   const t = dict.trainings;
+  const { user } = useSession();
+  const canManage = hasMinimumRole(user?.role, 'HR');
   const {
     data: trainings,
     loading,
@@ -97,11 +104,13 @@ export default function TrainingsPage() {
   return (
     <div className="grid gap-6">
       <PageHeader
+        kicker={t.completed}
         title={t.title}
         description={t.description
           .split('{count}')
           .join(String(trainings?.length ?? 0))}
-        actions={<AddTrainingDialog />}
+        icon={<GraduationCap className="size-6" />}
+        actions={canManage ? <AddTrainingDialog /> : undefined}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -109,7 +118,7 @@ export default function TrainingsPage() {
           label={t.active}
           value={(trainings ?? []).filter((t) => t.status === 'PLANNED').length}
           hint={t.activeHint}
-          icon={<GraduationCap className="size-5" />}
+          icon={<Clock3 className="size-5" />}
           accent="info"
         />
         <StatCard
@@ -130,7 +139,7 @@ export default function TrainingsPage() {
           label={t.completed}
           value={completed}
           hint={t.completedHint}
-          icon={<Check className="size-5" />}
+          icon={<CheckCircle2 className="size-5" />}
           accent="success"
         />
       </div>
@@ -140,7 +149,7 @@ export default function TrainingsPage() {
       ) : loading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }, (_, i) => {
-            return <Skeleton key={i} className="h-56 w-full" />;
+            return <Skeleton key={i} className="h-72 w-full" />;
           })}
         </div>
       ) : (trainings ?? []).length === 0 ? (
@@ -148,7 +157,7 @@ export default function TrainingsPage() {
           icon={<GraduationCap className="size-6" />}
           title={t.noTrainings}
           description={t.noTrainingsDesc}
-          action={<AddTrainingDialog />}
+          action={canManage ? <AddTrainingDialog /> : undefined}
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -159,6 +168,7 @@ export default function TrainingsPage() {
                 training={training}
                 employees={employees.data ?? []}
                 userMap={userMap}
+                canManage={canManage}
                 onDeleted={refetch}
               />
             );
@@ -173,11 +183,13 @@ function TrainingCard({
   training,
   employees,
   userMap,
+  canManage,
   onDeleted,
 }: {
   training: Training;
   employees: EmployeeResponse[];
   userMap: Map<number, User>;
+  canManage: boolean;
   onDeleted: () => void;
 }) {
   const { dict } = useI18n();
@@ -185,6 +197,7 @@ function TrainingCard({
   const participants = training.numberOfParticipants ?? 0;
   const fill = Math.min((participants / training.capacity) * 100, 100);
   const isFull = participants >= training.capacity;
+  const isDone = training.status === 'DONE';
 
   const removeMutation = useApiMutation<number, string>(
     (id) => trainingsApi.remove(id),
@@ -199,59 +212,93 @@ function TrainingCard({
   );
 
   return (
-    <Card className="flex flex-col rounded-lg">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="text-base">{training.title}</CardTitle>
-            <p className="text-muted-foreground mt-0.5 text-xs">
-              <span className="text-muted-foreground">
-                {t.by} {training.trainer || '—'}
-              </span>
-            </p>
-          </div>
-          <StatusBadge status={training.status} />
+    <Card className="group flex flex-col overflow-hidden rounded-2xl shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+      <div
+        className={cn(
+          'relative flex items-center gap-3 bg-linear-to-br p-4',
+          statusGradient[training.status] ??
+            'from-primary/15 to-primary/5 text-primary'
+        )}
+      >
+        <div className="bg-card/80 text-foreground flex size-10 shrink-0 items-center justify-center rounded-xl shadow-sm ring-1 ring-black/5">
+          <GraduationCap className="size-5" />
         </div>
-      </CardHeader>
-      <CardContent className="flex-1 space-y-3">
-        <p className="text-muted-foreground line-clamp-3 text-sm">
+        <div className="min-w-0 flex-1">
+          <h3 className="font-heading truncate text-[15px] font-semibold tracking-tight">
+            {training.title}
+          </h3>
+          <p className="text-muted-foreground mt-0.5 truncate text-xs">
+            {t.by} {training.trainer || '—'}
+          </p>
+        </div>
+        <StatusBadge status={training.status} />
+      </div>
+
+      <CardContent className="flex-1 space-y-4 p-4">
+        <p className="text-muted-foreground line-clamp-2 text-[13px] leading-relaxed">
           {training.description}
         </p>
-        <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs">
-          <span className="inline-flex items-center gap-1.5">
-            <MapPin className="size-3.5" /> {training.location || '—'}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <CalendarDays className="size-3.5" />
-            {formatDate(training.startDate)} → {formatDate(training.endDate)}
-          </span>
+        <div className="space-y-2 text-xs">
+          <div className="text-muted-foreground flex items-center gap-2">
+            <span className="bg-muted/60 flex size-6 items-center justify-center rounded-md">
+              <MapPin className="size-3" />
+            </span>
+            {training.location || '—'}
+          </div>
+          <div className="text-muted-foreground flex items-center gap-2">
+            <span className="bg-muted/60 flex size-6 items-center justify-center rounded-md">
+              <CalendarDays className="size-3" />
+            </span>
+            <span className="inline-flex items-center gap-1">
+              {formatDate(training.startDate)}
+              <ArrowRight className="size-3 rtl:rotate-180" />
+              {formatDate(training.endDate)}
+            </span>
+          </div>
         </div>
+
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">{t.inscriptions}</span>
-            <span className="font-medium">
+            <span className="font-semibold tabular-nums">
               {participants}/{training.capacity}
+              <span className="text-muted-foreground ms-1.5 font-normal">
+                ({Math.round(fill)}%)
+              </span>
             </span>
           </div>
-          <Progress value={fill} className="h-2" />
+          <Progress
+            value={fill}
+            className={cn(
+              'h-1.5',
+              isDone
+                ? '[&>div]:bg-chart-2'
+                : isFull
+                  ? '[&>div]:bg-chart-3'
+                  : '[&>div]:bg-chart-4'
+            )}
+          />
         </div>
       </CardContent>
-      <CardFooter className="gap-2">
+
+      <CardFooter className="bg-muted/20 gap-2 border-t px-4 py-3">
         <EnrollDialog
           training={training}
           employees={employees}
           userMap={userMap}
-          disabled={isFull || training.status === 'DONE'}
+          disabled={isFull || isDone}
         />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-destructive hover:text-destructive ml-auto"
-          onClick={() => removeMutation.mutate(training.id)}
-          disabled={removeMutation.isPending}
-        >
-          <Trash2 /> {t.delete}
-        </Button>
+        {canManage && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 ms-auto"
+            onClick={() => removeMutation.mutate(training.id)}
+            disabled={removeMutation.isPending}
+          >
+            <Trash2 /> {t.delete}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
@@ -308,13 +355,8 @@ function EnrollDialog({
           <DialogDescription>{t.enrollDialogDesc}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-1">
-          <div className="space-y-2">
-            <label
-              htmlFor="enroll-employee"
-              className="text-sm leading-none font-medium"
-            >
-              {t.employee}
-            </label>
+          <Field>
+            <FieldLabel htmlFor="enroll-employee">{t.employee}</FieldLabel>
             <Select
               value={employeeId ? String(employeeId) : ''}
               onValueChange={(v) => setEmployeeId(Number(v))}
@@ -330,7 +372,7 @@ function EnrollDialog({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </Field>
           <DialogFooter className="pt-2">
             <Button
               onClick={() =>

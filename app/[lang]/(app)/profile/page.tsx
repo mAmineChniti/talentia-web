@@ -3,7 +3,20 @@
 import * as React from 'react';
 import { useForm, Controller, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, ShieldCheck } from 'lucide-react';
+import {
+  Briefcase,
+  Building2,
+  Camera,
+  Globe,
+  Link,
+  Lock,
+  Mail,
+  MapPin,
+  Phone,
+  Save,
+  ShieldCheck,
+  UserRound,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useApiMutation } from '@/hooks/use-api';
@@ -72,30 +85,92 @@ export default function ProfilePage() {
     photoMutation.mutate(file);
   }
 
+  const meta = [
+    { icon: <Mail className="size-3.5" />, value: user?.email },
+    {
+      icon: <MapPin className="size-3.5" />,
+      value: [user?.city, user?.country].filter(Boolean).join(', '),
+    },
+    {
+      icon: <Phone className="size-3.5" />,
+      value: user?.telephone ? String(user.telephone) : undefined,
+    },
+    { icon: <Globe className="size-3.5" />, value: user?.linkedinUrl },
+    { icon: <Link className="size-3.5" />, value: user?.githubUrl },
+  ].filter((m) => m.value);
+
   return (
     <div className="grid gap-6">
-      <PageHeader title={t.title} description={t.description} />
+      <PageHeader
+        title={t.title}
+        description={t.description}
+        icon={<UserRound className="size-6" />}
+      />
 
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[280px_1fr]">
-        <Card className="rounded-lg">
-          <CardContent className="flex flex-col items-center gap-4 pt-2 text-center">
-            <Avatar className="size-24">
+      <div className="from-primary via-primary/90 to-brand-2 shadow-primary/10 relative overflow-hidden rounded-2xl bg-linear-to-br shadow-lg">
+        <div className="pointer-events-none absolute -end-24 -top-24 size-72 rounded-full bg-white/10 blur-3xl" />
+        <div className="bg-brand-2/30 pointer-events-none absolute -start-16 -bottom-28 size-80 rounded-full blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.12),transparent_45%)]" />
+        <div className="relative flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-8">
+          <Avatar className="ring-background/40 size-24 rounded-2xl border-4 border-white/25 shadow-xl backdrop-blur">
+            <AvatarImage
+              src={user?.profileImageUrl}
+              alt={fullName(user?.name, user?.lastname)}
+            />
+            <AvatarFallback className="from-primary/20 to-brand-2/20 rounded-2xl text-2xl font-semibold">
+              {initials(user?.name, user?.lastname)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium tracking-wide text-white/70 uppercase">
+              {user?.role}
+            </p>
+            <h2 className="font-heading text-2xl font-bold tracking-tight text-white">
+              {fullName(user?.name, user?.lastname)}
+            </h2>
+            <p className="mt-0.5 line-clamp-1 text-sm text-white/80">
+              {user?.profession}
+              {user?.entreprise ? ` · ${user.entreprise}` : ''}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {meta.map((m, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white ring-1 ring-white/20 backdrop-blur"
+                >
+                  {m.icon}
+                  <span className="max-w-44 truncate">{m.value}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[320px_1fr]">
+        <Card className="overflow-hidden rounded-2xl shadow-sm">
+          <CardHeader className="bg-muted/25 border-b">
+            <CardTitle className="text-base">{t.photo}</CardTitle>
+            <CardDescription>{t.photoHint}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-4 pt-6 text-center">
+            <Avatar className="ring-background size-28 rounded-2xl shadow-md ring-4">
               <AvatarImage
                 src={user?.profileImageUrl}
                 alt={fullName(user?.name, user?.lastname)}
               />
-              <AvatarFallback className="text-2xl">
+              <AvatarFallback className="from-primary/10 to-brand-2/10 rounded-2xl text-3xl font-semibold">
                 {initials(user?.name, user?.lastname)}
               </AvatarFallback>
             </Avatar>
-            <div className="space-y-1">
-              <p className="text-base font-semibold">
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold">
                 {fullName(user?.name, user?.lastname)}
               </p>
-              <p className="text-muted-foreground text-sm">{user?.email}</p>
-              <div className="bg-muted mt-2 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium">
-                {user?.role}
-              </div>
+              <p className="text-muted-foreground text-xs">{user?.email}</p>
+            </div>
+            <div className="bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold">
+              <ShieldCheck className="size-3.5" /> {user?.role}
             </div>
             <FileDrop
               onFileSelect={handlePhotoSelect}
@@ -103,6 +178,9 @@ export default function ProfilePage() {
               disabled={photoMutation.isPending}
               className="w-full"
             />
+            <p className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+              <Camera className="size-3.5" /> {t.photoHint}
+            </p>
           </CardContent>
         </Card>
 
@@ -112,12 +190,19 @@ export default function ProfilePage() {
           )}
           className="grid gap-6"
         >
-          <Card className="rounded-lg">
-            <CardHeader>
-              <CardTitle>{t.personal}</CardTitle>
-              <CardDescription>{t.personalHint}</CardDescription>
+          <Card className="overflow-hidden rounded-2xl shadow-sm">
+            <CardHeader className="bg-muted/25 border-b">
+              <div className="flex items-center gap-3">
+                <span className="from-primary/15 to-brand-2/15 text-primary flex size-9 items-center justify-center rounded-xl bg-linear-to-br ring-1 ring-black/5">
+                  <UserRound className="size-4.5" />
+                </span>
+                <div>
+                  <CardTitle className="text-base">{t.personal}</CardTitle>
+                  <CardDescription>{t.personalHint}</CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-5">
               <FieldGroup>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <TextController
@@ -168,12 +253,19 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-lg">
-            <CardHeader>
-              <CardTitle>{t.professional}</CardTitle>
-              <CardDescription>{t.professionalHint}</CardDescription>
+          <Card className="overflow-hidden rounded-2xl shadow-sm">
+            <CardHeader className="bg-muted/25 border-b">
+              <div className="flex items-center gap-3">
+                <span className="from-primary/15 to-brand-2/15 text-primary flex size-9 items-center justify-center rounded-xl bg-linear-to-br ring-1 ring-black/5">
+                  <Briefcase className="size-4.5" />
+                </span>
+                <div>
+                  <CardTitle className="text-base">{t.professional}</CardTitle>
+                  <CardDescription>{t.professionalHint}</CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-5">
               <FieldGroup>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <TextController
@@ -247,12 +339,19 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-lg">
-            <CardHeader>
-              <CardTitle>{t.security}</CardTitle>
-              <CardDescription>{t.securityHint}</CardDescription>
+          <Card className="overflow-hidden rounded-2xl shadow-sm">
+            <CardHeader className="bg-muted/25 border-b">
+              <div className="flex items-center gap-3">
+                <span className="from-primary/15 to-brand-2/15 text-primary flex size-9 items-center justify-center rounded-xl bg-linear-to-br ring-1 ring-black/5">
+                  <Lock className="size-4.5" />
+                </span>
+                <div>
+                  <CardTitle className="text-base">{t.security}</CardTitle>
+                  <CardDescription>{t.securityHint}</CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-5">
               <FieldGroup>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <TextController
@@ -267,8 +366,8 @@ export default function ProfilePage() {
                       <ShieldCheck className="text-muted-foreground size-4" />
                       <span className="text-sm font-medium">{t.role}</span>
                     </div>
-                    <div className="bg-muted flex h-9 items-center rounded-lg px-2.5 text-sm">
-                      {user?.role}
+                    <div className="from-primary/10 to-brand-2/10 text-primary flex h-9 items-center gap-2 rounded-lg bg-linear-to-r px-2.5 text-sm font-semibold ring-1 ring-black/5">
+                      <Building2 className="size-4" /> {user?.role}
                     </div>
                   </div>
                 </div>
@@ -276,11 +375,17 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <div className="flex justify-end">
-            <Button type="submit" disabled={updateMutation.isPending}>
-              <Save />
-              {updateMutation.isPending ? t.saving : t.save}
-            </Button>
+          <div className="sticky bottom-4 z-10 flex justify-end">
+            <div className="bg-card/90 flex items-center gap-3 rounded-2xl border p-2 shadow-lg backdrop-blur">
+              <Button
+                type="submit"
+                disabled={updateMutation.isPending}
+                className="px-6"
+              >
+                <Save />
+                {updateMutation.isPending ? t.saving : t.save}
+              </Button>
+            </div>
           </div>
         </form>
       </div>

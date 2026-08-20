@@ -5,7 +5,12 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type * as z from 'zod';
 import {
+  CalendarRange,
+  Clock3,
+  FileCheck2,
   FileSignature,
+  FileX2,
+  HandCoins,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -15,6 +20,8 @@ import { toast } from 'sonner';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
+import { useSession } from '@/hooks/use-session';
+import { hasMinimumRole } from '@/lib/rbac';
 import { createContractSchema } from '@/lib/schemas/contracts';
 import { contractsApi } from '@/lib/services/contracts';
 import { employeesApi } from '@/lib/services/employees';
@@ -22,7 +29,7 @@ import { usersApi } from '@/lib/services/users';
 import type { ContractResponse } from '@/lib/types/contracts';
 import type { EmployeeResponse } from '@/lib/types/employees';
 import type { User } from '@/lib/types/users';
-import { formatCurrency, formatDate, fullName } from '@/lib/format';
+import { formatCurrency, formatDate, fullName, initials } from '@/lib/format';
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
 import { StatusBadge } from '@/components/status-badge';
@@ -64,10 +71,13 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 const CONTRACT_TYPES = ['CDI', 'CDD', 'Freelance', 'Internship'];
 
@@ -78,11 +88,20 @@ const CONTRACT_TYPE_LABELS: Record<string, string> = {
   Internship: 'Stage',
 };
 
+const CONTRACT_TONES: Record<string, string> = {
+  CDI: 'bg-primary/10 text-primary ring-primary/20',
+  CDD: 'bg-chart-4/10 text-chart-4 ring-chart-4/20',
+  Freelance: 'bg-chart-3/10 text-chart-3 ring-chart-3/20',
+  Internship: 'bg-chart-2/10 text-chart-2 ring-chart-2/20',
+};
+
 type ContractFormValues = z.infer<ReturnType<typeof createContractSchema>>;
 
 export default function ContractsPage() {
   const { dict } = useI18n();
   const t = dict.contracts;
+  const { user } = useSession();
+  const canManage = hasMinimumRole(user?.role, 'HR');
   const {
     data: contracts,
     loading,
@@ -120,15 +139,19 @@ export default function ContractsPage() {
   return (
     <div className="grid gap-6">
       <PageHeader
+        kicker={t.contractType}
         title={t.title}
         description={t.count
           .split('{count}')
           .join(String(contracts?.length ?? 0))}
+        icon={<FileSignature className="size-6" />}
         actions={
-          <AddContractDialog
-            employees={employees.data ?? []}
-            userMap={userMap}
-          />
+          canManage ? (
+            <AddContractDialog
+              employees={employees.data ?? []}
+              userMap={userMap}
+            />
+          ) : undefined
         }
       />
 
@@ -137,21 +160,21 @@ export default function ContractsPage() {
           label={t.active}
           value={active}
           hint={t.activeHint}
-          icon={<FileSignature className="size-5" />}
+          icon={<FileCheck2 className="size-5" />}
           accent="success"
         />
         <StatCard
           label={t.expired}
           value={expired}
           hint={t.expiredHint}
-          icon={<FileSignature className="size-5" />}
+          icon={<FileX2 className="size-5" />}
           accent="danger"
         />
         <StatCard
           label={t.payroll}
           value={formatCurrency(totalMonthly)}
           hint={t.payrollHint}
-          icon={<FileSignature className="size-5" />}
+          icon={<HandCoins className="size-5" />}
           accent="info"
         />
         <StatCard
@@ -162,18 +185,18 @@ export default function ContractsPage() {
               : 0
           )}
           hint={t.averageSalaryHint}
-          icon={<FileSignature className="size-5" />}
+          icon={<Clock3 className="size-5" />}
         />
       </div>
 
-      <Card className="rounded-lg py-0">
-        <CardContent className="py-4">
+      <Card className="overflow-hidden rounded-2xl py-0 shadow-sm">
+        <CardContent className="p-4 sm:p-5">
           {error ? (
             <ErrorState onRetry={refetch} description={error.message} />
           ) : loading ? (
             <div className="space-y-3">
               {Array.from({ length: 6 }, (_, i) => {
-                return <Skeleton key={i} className="h-12 w-full" />;
+                return <Skeleton key={i} className="h-14 w-full" />;
               })}
             </div>
           ) : (contracts ?? []).length === 0 ? (
@@ -189,16 +212,16 @@ export default function ContractsPage() {
               }
             />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="-mx-4 overflow-x-auto px-4 sm:-mx-5 sm:px-5">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
                     <TableHead>{t.employee}</TableHead>
                     <TableHead>{t.type}</TableHead>
                     <TableHead>{t.startDate}</TableHead>
                     <TableHead>{t.endDate}</TableHead>
                     <TableHead>{t.hoursPerWeek}</TableHead>
-                    <TableHead>{t.salary}</TableHead>
+                    <TableHead className="text-end">{t.salary}</TableHead>
                     <TableHead>{t.status}</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
@@ -208,18 +231,50 @@ export default function ContractsPage() {
                     const employee = employeeMap.get(contract.employeeId);
                     const user = userMap.get(employee?.userId ?? -1);
                     return (
-                      <TableRow key={contract.id}>
-                        <TableCell className="text-sm font-medium">
-                          {fullName(user?.name, user?.lastname)}
+                      <TableRow key={contract.id} className="group">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="ring-primary/10 size-9 ring-1">
+                              <AvatarImage src={user?.profileImageUrl} />
+                              <AvatarFallback>
+                                {initials(user?.name, user?.lastname)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium">
+                                {fullName(user?.name, user?.lastname)}
+                              </p>
+                              <p className="text-muted-foreground truncate text-xs">
+                                {employee?.position || '—'}
+                              </p>
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell>
-                          {CONTRACT_TYPE_LABELS[contract.contractType] ??
-                            contract.contractType}
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset',
+                              CONTRACT_TONES[contract.contractType] ??
+                                'bg-muted text-muted-foreground'
+                            )}
+                          >
+                            {CONTRACT_TYPE_LABELS[contract.contractType] ??
+                              contract.contractType}
+                          </span>
                         </TableCell>
-                        <TableCell>{formatDate(contract.startDate)}</TableCell>
-                        <TableCell>{formatDate(contract.endDate)}</TableCell>
-                        <TableCell>{`${contract.workingHours} ${t.workingHoursUnit}`}</TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                          {formatDate(contract.startDate)}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                          {formatDate(contract.endDate)}
+                        </TableCell>
+                        <TableCell>
+                          <span className="bg-muted/60 text-muted-foreground inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs">
+                            <CalendarRange className="size-3" />
+                            {contract.workingHours} {t.workingHoursUnit}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-end font-semibold tabular-nums">
                           {formatCurrency(contract.salary)}
                         </TableCell>
                         <TableCell>
@@ -232,6 +287,15 @@ export default function ContractsPage() {
                     );
                   })}
                 </TableBody>
+                <TableFooter className="bg-muted/30">
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-2.5 text-xs">
+                      <span className="text-muted-foreground">
+                        {contracts?.length ?? 0} {t.contractType}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
               </Table>
             </div>
           )}
@@ -244,6 +308,8 @@ export default function ContractsPage() {
 function RowActions({ contract }: { contract: ContractResponse }) {
   const { dict } = useI18n();
   const t = dict.contracts;
+  const { user } = useSession();
+  const canManage = hasMinimumRole(user?.role, 'HR');
   const [open, setOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
@@ -258,6 +324,8 @@ function RowActions({ contract }: { contract: ContractResponse }) {
       onError: (err) => toast.error(err.message),
     }
   );
+
+  if (!canManage) return;
 
   return (
     <>

@@ -35,6 +35,7 @@ export async function setSessionCookie(user: SessionUser) {
 export async function deleteSessionCookie() {
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, '', { maxAge: 0 });
+  cookieStore.set('JSESSIONID', '', { maxAge: 0 });
 }
 
 export async function getSessionCookie(): Promise<SessionUser | undefined> {

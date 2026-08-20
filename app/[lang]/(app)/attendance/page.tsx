@@ -5,9 +5,12 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type * as z from 'zod';
 import {
-  CalendarDays,
+  AlarmClock,
   Clock,
   Fingerprint,
+  LogIn,
+  LogOut,
+  Timer,
   Trash2,
   UserCheck,
   Users,
@@ -15,6 +18,8 @@ import {
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
+import { useSession } from '@/hooks/use-session';
+import { hasMinimumRole } from '@/lib/rbac';
 import { createScanSchema } from '@/lib/schemas/attendance';
 import { attendanceApi } from '@/lib/services/attendance';
 import { employeesApi } from '@/lib/services/employees';
@@ -48,6 +53,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -72,6 +78,8 @@ function hoursLabel(value: number | undefined) {
 export default function AttendancePage() {
   const { dict } = useI18n();
   const t = dict.attendance;
+  const { user } = useSession();
+  const canManage = hasMinimumRole(user?.role, 'HR');
   const [date, setDate] = React.useState(todayISO);
 
   const {
@@ -98,8 +106,10 @@ export default function AttendancePage() {
   return (
     <div className="grid gap-6">
       <PageHeader
+        kicker={formatDate(date)}
         title={t.title}
         description={t.date.split('{date}').join(formatDate(date))}
+        icon={<Fingerprint className="size-6" />}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <DatePicker
@@ -108,7 +118,7 @@ export default function AttendancePage() {
               className="w-fit"
               aria-label={t.selectDate}
             />
-            <ScanDialog onScanned={refetch} />
+            {canManage && <ScanDialog onScanned={refetch} />}
           </div>
         }
       />
@@ -125,14 +135,14 @@ export default function AttendancePage() {
           label={t.late}
           value={late}
           hint={t.lateRecorded}
-          icon={<Clock className="size-5" />}
+          icon={<AlarmClock className="size-5" />}
           accent="warning"
         />
         <StatCard
           label={t.hoursWorked}
           value={hoursLabel(totalWorked)}
           hint={t.totalDay}
-          icon={<CalendarDays className="size-5" />}
+          icon={<Timer className="size-5" />}
           accent="info"
         />
         <StatCard
@@ -143,14 +153,14 @@ export default function AttendancePage() {
         />
       </div>
 
-      <Card className="rounded-lg py-0">
-        <CardContent className="py-4">
+      <Card className="overflow-hidden rounded-2xl py-0 shadow-sm">
+        <CardContent className="p-4 sm:p-5">
           {error ? (
             <ErrorState onRetry={refetch} description={error.message} />
           ) : loading ? (
             <div className="space-y-3">
               {Array.from({ length: 6 }, (_, i) => {
-                return <Skeleton key={i} className="h-12 w-full" />;
+                return <Skeleton key={i} className="h-14 w-full" />;
               })}
             </div>
           ) : (records ?? []).length === 0 ? (
@@ -161,10 +171,10 @@ export default function AttendancePage() {
               action={<ScanDialog onScanned={refetch} />}
             />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="-mx-4 overflow-x-auto px-4 sm:-mx-5 sm:px-5">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
                     <TableHead>{t.employee}</TableHead>
                     <TableHead>{t.checkIn}</TableHead>
                     <TableHead>{t.checkOut}</TableHead>
@@ -185,6 +195,16 @@ export default function AttendancePage() {
                     );
                   })}
                 </TableBody>
+                <TableFooter className="bg-muted/30">
+                  <TableRow>
+                    <TableCell colSpan={7} className="py-2.5 text-xs">
+                      <span className="text-muted-foreground">
+                        {checkedIn} {t.employeesScanned} ·{' '}
+                        {hoursLabel(totalWorked)} {t.totalDay}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
               </Table>
             </div>
           )}
@@ -204,7 +224,9 @@ function AttendanceRow({
   const { dict } = useI18n();
   const t = dict.attendance;
   const employee = record.employee;
-  const user = employee?.user;
+  const employeeUser = employee?.user;
+  const { user: sessionUser } = useSession();
+  const canManage = hasMinimumRole(sessionUser?.role, 'HR');
 
   const removeMutation = useApiMutation<number, string>(
     (id) => attendanceApi.remove(id),
@@ -219,18 +241,18 @@ function AttendanceRow({
   );
 
   return (
-    <TableRow>
+    <TableRow className="group">
       <TableCell>
         <div className="flex items-center gap-3">
-          <Avatar className="size-8">
-            <AvatarImage src={user?.profileImageUrl} />
+          <Avatar className="ring-primary/10 size-9 ring-1">
+            <AvatarImage src={employeeUser?.profileImageUrl} />
             <AvatarFallback>
-              {initials(user?.name, user?.lastname)}
+              {initials(employeeUser?.name, employeeUser?.lastname)}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">
-              {fullName(user?.name, user?.lastname)}
+              {fullName(employeeUser?.name, employeeUser?.lastname)}
             </p>
             <p className="text-muted-foreground truncate text-xs">
               {employee?.position || employee?.employeeCode || '—'}
@@ -238,31 +260,55 @@ function AttendanceRow({
           </div>
         </div>
       </TableCell>
-      <TableCell className="font-mono text-sm">
-        {formatTime(record.checkIn)}
-      </TableCell>
-      <TableCell className="font-mono text-sm">
-        {formatTime(record.checkOut)}
-      </TableCell>
-      <TableCell>{hoursLabel(record.workedHours)}</TableCell>
       <TableCell>
-        {record.delayMinutes
-          ? t.delayMinutes.split('{minutes}').join(String(record.delayMinutes))
-          : '—'}
+        <span className="bg-muted/60 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-xs">
+          <LogIn className="text-chart-2 size-3" />
+          {formatTime(record.checkIn)}
+        </span>
+      </TableCell>
+      <TableCell>
+        {record.checkOut ? (
+          <span className="bg-muted/60 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-xs">
+            <LogOut className="text-muted-foreground size-3" />
+            {formatTime(record.checkOut)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground text-sm">—</span>
+        )}
+      </TableCell>
+      <TableCell>
+        <span className="text-sm font-semibold tabular-nums">
+          {hoursLabel(record.workedHours)}
+        </span>
+      </TableCell>
+      <TableCell>
+        {record.delayMinutes ? (
+          <span className="bg-chart-3/10 text-chart-3 ring-chart-3/20 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset">
+            <Clock className="size-3" />
+            {t.delayMinutes
+              .split('{minutes}')
+              .join(String(record.delayMinutes))}
+          </span>
+        ) : (
+          <span className="text-muted-foreground text-sm">—</span>
+        )}
       </TableCell>
       <TableCell>
         <StatusBadge status={record.status} />
       </TableCell>
       <TableCell>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label={t.deleteScan}
-          onClick={() => removeMutation.mutate(record.id)}
-          disabled={removeMutation.isPending}
-        >
-          <Trash2 className="text-destructive" />
-        </Button>
+        {canManage && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t.deleteScan}
+            onClick={() => removeMutation.mutate(record.id)}
+            disabled={removeMutation.isPending}
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 />
+          </Button>
+        )}
       </TableCell>
     </TableRow>
   );
