@@ -14,6 +14,7 @@ import {
   Sparkles,
   Star,
   ThumbsUp,
+  Trash2,
   Video,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -71,6 +72,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 
 type InterviewFormValues = z.infer<ReturnType<typeof createInterviewSchema>>;
@@ -443,6 +455,7 @@ function InterviewsView({
                   <TableHead>{t.type}</TableHead>
                   <TableHead>{t.location}</TableHead>
                   <TableHead>{t.status}</TableHead>
+                  <TableHead className="w-16" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -510,6 +523,12 @@ function InterviewsView({
                         <TableCell>
                           <StatusBadge status={interview.status} />
                         </TableCell>
+                        <TableCell className="text-end">
+                          <InterviewDeleteButton
+                            interview={interview}
+                            onDeleted={refetch}
+                          />
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -517,7 +536,7 @@ function InterviewsView({
               <TableFooter>
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="text-muted-foreground text-xs"
                   >
                     {t.interviewsHint}: {data?.length ?? 0}
@@ -529,6 +548,58 @@ function InterviewsView({
         </Card>
       )}
     </>
+  );
+}
+
+function InterviewDeleteButton({
+  interview,
+  onDeleted,
+}: {
+  interview: InterviewResponse;
+  onDeleted: () => void;
+}) {
+  const { dict } = useI18n();
+  const t = dict.recruitment;
+  const [open, setOpen] = React.useState(false);
+
+  const deleteMutation = useApiMutation<number, string>(
+    (id) => interviewsApi.remove(id),
+    {
+      invalidate: ['interviews.list'],
+      onSuccess: () => {
+        toast.success(t.successDeleted);
+        onDeleted();
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger
+        render={<Button variant="ghost" size="icon-sm" aria-label={t.delete} />}
+      >
+        <Trash2 className="text-muted-foreground hover:text-destructive size-4" />
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t.deleteInterviewTitle}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t.deleteInterviewDesc}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive hover:bg-destructive/90 text-white"
+            onClick={() => deleteMutation.mutate(interview.id)}
+            disabled={deleteMutation.isPending}
+          >
+            {t.delete}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

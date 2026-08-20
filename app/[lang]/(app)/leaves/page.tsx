@@ -274,6 +274,14 @@ function LeaveRow({ leave }: { leave: LeaveResponse }) {
     onSuccess: () => toast.success(t.successRejected),
     onError: (err) => toast.error(err.message),
   });
+  const cancelMutation = useApiMutation<number, LeaveResponse>(
+    (id) => leavesApi.cancel(id),
+    {
+      invalidate: ['leaves.list', 'dashboard.get'],
+      onSuccess: () => toast.success(t.successCancelled),
+      onError: (err) => toast.error(err.message),
+    }
+  );
 
   function review(action: 'approve' | 'reject', id: number) {
     if (!userId) {
@@ -360,6 +368,20 @@ function LeaveRow({ leave }: { leave: LeaveResponse }) {
             ) : (
               <span className="text-muted-foreground/50 text-xs">—</span>
             )}
+          </div>
+        ) : isPending ? (
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              className="border-muted-foreground/30 text-muted-foreground hover:text-destructive hover:border-destructive/40 hover:bg-destructive/10"
+              aria-label={t.cancel}
+              title={t.cancel}
+              onClick={() => cancelMutation.mutate(leave.id)}
+              disabled={cancelMutation.isPending}
+            >
+              <XCircle />
+            </Button>
           </div>
         ) : (
           <span className="text-muted-foreground/50 text-xs">—</span>

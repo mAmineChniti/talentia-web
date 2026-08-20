@@ -484,7 +484,19 @@
     "allDepartments": "جميع الأقسام",
     "inactive": "غير نشط",
     "employees": "موظف",
-    "active": "نشط"
+    "active": "نشط",
+    "trainings": "التدريبات",
+    "trainingsDialogTitle": "{name} — التدريبات",
+    "trainingsDialogDesc": "التسجيلات وإكمال التدريب لهذا الموظف.",
+    "noTrainings": "لا توجد تسجيلات بعد.",
+    "trainingTitle": "التدريب",
+    "enrollmentDate": "سُجّل في",
+    "score": "الدرجة (/20)",
+    "scorePlaceholder": "مثال 15",
+    "complete": "وضع كمكتمل",
+    "completing": "جارٍ الحفظ…",
+    "successCompleted": "تم وضع التسجيل كمكتمل",
+    "enrollmentStatus": "الحالة"
   },
   "attendance": {
     "title": "الحضور",
@@ -615,7 +627,9 @@
       "PATERNITY": "إجازة أبوة",
       "UNPAID": "إجازة بدون أجر",
       "EXCEPTIONAL": "إجازة استثنائية"
-    }
+    },
+    "cancel": "إلغاء",
+    "successCancelled": "تم إلغاء طلب الإجازة"
   },
   "payroll": {
     "title": "الرواتب",
@@ -730,7 +744,12 @@
     "schedule": "جدولة المقابلة",
     "successScheduled": "تمت جدولة المقابلة",
     "candidateName": "طلب #{id}",
-    "onlineMeeting": "رابط الاجتماع"
+    "onlineMeeting": "رابط الاجتماع",
+    "deleteInterviewTitle": "حذف المقابلة",
+    "deleteInterviewDesc": "سيتم حذف هذه المقابلة نهائيًا.",
+    "cancel": "إلغاء",
+    "successDeleted": "تم حذف المقابلة",
+    "delete": "حذف"
   },
   "trainings": {
     "title": "التدريبات",
@@ -808,7 +827,16 @@
     "like": "إعجاب",
     "liked": "تم الإعجاب",
     "noComments": "لا توجد تعليقات بعد. ابدأ النقاش!",
-    "cancel": "إلغاء"
+    "cancel": "إلغاء",
+    "apply": "تقدّم",
+    "applyDialogTitle": "تقدّم لهذه الوظيفة",
+    "applyDialogDesc": "ارفع سيرتك الذاتية (PDF) وخطاب تحفيزي قصير.",
+    "cvLabel": "السيرة الذاتية (PDF)",
+    "motivationLabel": "خطاب التحفيز",
+    "motivationPlaceholder": "أخبرنا لماذا أنت الشخص المناسب…",
+    "submittingApply": "جارٍ الإرسال…",
+    "successApplied": "تم إرسال الطلب",
+    "alreadyApplied": "لقد تقدمت بالفعل لهذه الوظيفة."
   },
   "forgotPassword": {
     "title": "نسيت كلمة المرور",

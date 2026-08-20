@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type * as z from 'zod';
 import {
   Briefcase,
+  GraduationCap,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -20,8 +21,10 @@ import { useSession } from '@/hooks/use-session';
 import { hasMinimumRole } from '@/lib/rbac';
 import { createEmployeeSchema } from '@/lib/schemas/employees';
 import { employeesApi } from '@/lib/services/employees';
+import { trainingsApi } from '@/lib/services/trainings';
 import { usersApi } from '@/lib/services/users';
 import type { EmployeeResponse } from '@/lib/types/employees';
+import type { TrainingEnrollment } from '@/lib/types/trainings';
 import type { User } from '@/lib/types/users';
 import { formatCurrency, formatDate, fullName, initials } from '@/lib/format';
 import { PageHeader } from '@/components/page-header';
@@ -380,6 +383,7 @@ function RowActions({
   const canManage = hasMinimumRole(user?.role, 'HR');
   const [open, setOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [trainingsOpen, setTrainingsOpen] = React.useState(false);
   const u = userMap.get(employee.userId);
   const employeeName = fullName(u?.name, u?.lastname);
 
@@ -407,6 +411,9 @@ function RowActions({
           <MoreHorizontal />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem onSelect={() => setTrainingsOpen(true)}>
+            <GraduationCap /> {t.trainings}
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setOpen(true)}>
             <Pencil /> {t.edit}
           </DropdownMenuItem>
@@ -423,6 +430,13 @@ function RowActions({
         isOpen={open}
         onOpenChange={setOpen}
         employee={employee}
+      />
+
+      <EmployeeTrainingsDialog
+        employee={employee}
+        employeeName={employeeName}
+        isOpen={trainingsOpen}
+        onOpenChange={setTrainingsOpen}
       />
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -450,6 +464,143 @@ function RowActions({
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function EmployeeTrainingsDialog({
+  employee,
+  employeeName,
+  isOpen,
+  onOpenChange,
+}: {
+  employee: EmployeeResponse;
+  employeeName: string;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+}) {
+  const { dict } = useI18n();
+  const t = dict.employees;
+  const {
+    data: enrollments,
+    loading,
+    error,
+    refetch,
+  } = useApi(
+    ['trainings.employee', String(employee.id)],
+    () => trainingsApi.listByEmployee(employee.id),
+    { enabled: isOpen }
+  );
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            {t.trainingsDialogTitle.split('{name}').join(employeeName)}
+          </DialogTitle>
+          <DialogDescription>{t.trainingsDialogDesc}</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-2 py-1">
+          {error ? (
+            <p className="text-destructive text-xs">{error.message}</p>
+          ) : loading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          ) : (enrollments ?? []).length === 0 ? (
+            <p className="text-muted-foreground py-6 text-center text-sm">
+              {t.noTrainings}
+            </p>
+          ) : (
+            (enrollments ?? []).map((enrollment) => {
+              return (
+                <EnrollmentRow
+                  key={enrollment.id}
+                  enrollment={enrollment}
+                  onChanged={refetch}
+                />
+              );
+            })
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EnrollmentRow({
+  enrollment,
+  onChanged,
+}: {
+  enrollment: TrainingEnrollment;
+  onChanged: () => void;
+}) {
+  const { dict } = useI18n();
+  const t = dict.employees;
+  const isComplete = enrollment.status === 'COMPLETED';
+  const [score, setScore] = React.useState('');
+
+  const completeMutation = useApiMutation<
+    { id: number; score: number },
+    TrainingEnrollment
+  >(({ id, score }) => trainingsApi.complete(id, score), {
+    invalidate: [['trainings.employee', String(enrollment.employee?.id)]],
+    onSuccess: () => {
+      toast.success(t.successCompleted);
+      setScore('');
+      onChanged();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  return (
+    <div className="bg-muted/40 flex items-center gap-3 rounded-xl p-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">
+          {enrollment.training?.title ?? '—'}
+        </p>
+        <p className="text-muted-foreground text-xs">
+          {t.enrollmentDate} {formatDate(enrollment.enrollmentDate)}
+          {enrollment.score !== undefined && (
+            <span className="ms-2">
+              · {t.score} {enrollment.score}
+            </span>
+          )}
+        </p>
+      </div>
+      {isComplete ? (
+        <StatusBadge status="COMPLETED" />
+      ) : (
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            min="0"
+            max="20"
+            value={score}
+            onChange={(e) => setScore(e.target.value)}
+            placeholder={t.scorePlaceholder}
+            className="w-24"
+          />
+          <Button
+            size="sm"
+            onClick={() =>
+              completeMutation.mutate({
+                id: enrollment.id,
+                score: Number(score),
+              })
+            }
+            disabled={
+              !score ||
+              Number.isNaN(Number(score)) ||
+              completeMutation.isPending
+            }
+          >
+            {completeMutation.isPending ? t.completing : t.complete}
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
 

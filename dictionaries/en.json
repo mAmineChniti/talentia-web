@@ -484,7 +484,19 @@
     "allDepartments": "All departments",
     "inactive": "inactive",
     "employees": "employees",
-    "active": "active"
+    "active": "active",
+    "trainings": "Trainings",
+    "trainingsDialogTitle": "{name} — Trainings",
+    "trainingsDialogDesc": "Enrollments and completion for this employee.",
+    "noTrainings": "No enrollments yet.",
+    "trainingTitle": "Training",
+    "enrollmentDate": "Enrolled on",
+    "score": "Score (/20)",
+    "scorePlaceholder": "e.g. 15",
+    "complete": "Mark complete",
+    "completing": "Saving…",
+    "successCompleted": "Enrollment marked as complete",
+    "enrollmentStatus": "Status"
   },
   "attendance": {
     "title": "Attendance",
@@ -615,7 +627,9 @@
       "PATERNITY": "Paternity",
       "UNPAID": "Unpaid leave",
       "EXCEPTIONAL": "Exceptional"
-    }
+    },
+    "cancel": "Cancel",
+    "successCancelled": "Leave request cancelled"
   },
   "payroll": {
     "title": "Payroll",
@@ -730,7 +744,12 @@
     "schedule": "Schedule interview",
     "successScheduled": "Interview scheduled",
     "candidateName": "Application #{id}",
-    "onlineMeeting": "Meeting link"
+    "onlineMeeting": "Meeting link",
+    "deleteInterviewTitle": "Delete interview",
+    "deleteInterviewDesc": "This interview will be removed permanently.",
+    "cancel": "Cancel",
+    "successDeleted": "Interview deleted",
+    "delete": "Delete"
   },
   "trainings": {
     "title": "Trainings",
@@ -808,7 +827,16 @@
     "like": "Like",
     "liked": "Liked",
     "noComments": "No comments yet. Start the discussion!",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "applyDialogTitle": "Apply for this job",
+    "applyDialogDesc": "Upload your CV (PDF) and a short motivation letter.",
+    "cvLabel": "CV (PDF)",
+    "motivationLabel": "Motivation letter",
+    "motivationPlaceholder": "Tell us why you are a good fit…",
+    "submittingApply": "Submitting…",
+    "successApplied": "Application submitted",
+    "alreadyApplied": "You have already applied to this offer."
   },
   "forgotPassword": {
     "title": "Forgot password",

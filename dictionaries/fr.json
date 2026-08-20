@@ -484,7 +484,19 @@
     "allDepartments": "Tous les départements",
     "inactive": "inactifs",
     "employees": "employés",
-    "active": "actifs"
+    "active": "actifs",
+    "trainings": "Formations",
+    "trainingsDialogTitle": "{name} — Formations",
+    "trainingsDialogDesc": "Inscriptions et complétion de cet employé.",
+    "noTrainings": "Aucune inscription pour le moment.",
+    "trainingTitle": "Formation",
+    "enrollmentDate": "Inscrit le",
+    "score": "Score (/20)",
+    "scorePlaceholder": "ex. 15",
+    "complete": "Marquer terminé",
+    "completing": "Enregistrement…",
+    "successCompleted": "Inscription marquée comme terminée",
+    "enrollmentStatus": "Statut"
   },
   "attendance": {
     "title": "Présences",
@@ -615,7 +627,9 @@
       "PATERNITY": "Paternité",
       "UNPAID": "Sans solde",
       "EXCEPTIONAL": "Exceptionnel"
-    }
+    },
+    "cancel": "Annuler",
+    "successCancelled": "Demande de congé annulée"
   },
   "payroll": {
     "title": "Paie",
@@ -730,7 +744,12 @@
     "schedule": "Planifier l'entretien",
     "successScheduled": "Entretien planifié",
     "candidateName": "Candidature #{id}",
-    "onlineMeeting": "Lien de la réunion"
+    "onlineMeeting": "Lien de la réunion",
+    "deleteInterviewTitle": "Supprimer l'entretien",
+    "deleteInterviewDesc": "Cet entretien sera supprimé définitivement.",
+    "cancel": "Annuler",
+    "successDeleted": "Entretien supprimé",
+    "delete": "Supprimer"
   },
   "trainings": {
     "title": "Formations",
@@ -808,7 +827,16 @@
     "like": "J'aime",
     "liked": "J'aime",
     "noComments": "Aucun commentaire. Lancez la discussion !",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "apply": "Postuler",
+    "applyDialogTitle": "Postuler à cette offre",
+    "applyDialogDesc": "Téléversez votre CV (PDF) et une courte lettre de motivation.",
+    "cvLabel": "CV (PDF)",
+    "motivationLabel": "Lettre de motivation",
+    "motivationPlaceholder": "Dites-nous pourquoi vous êtes le bon profil…",
+    "submittingApply": "Envoi…",
+    "successApplied": "Candidature envoyée",
+    "alreadyApplied": "Vous avez déjà postulé à cette offre."
   },
   "forgotPassword": {
     "title": "Mot de passe oublié",

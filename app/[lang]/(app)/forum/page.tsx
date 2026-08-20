@@ -1,15 +1,24 @@
 'use client';
 
 import * as React from 'react';
-import { Heart, MessagesSquare, Plus, Send, Trash2 } from 'lucide-react';
+import {
+  Briefcase,
+  Heart,
+  MessagesSquare,
+  Plus,
+  Send,
+  Trash2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
 import { useSession } from '@/hooks/use-session';
 import { hasMinimumRole } from '@/lib/rbac';
+import { applicationsApi } from '@/lib/services/applications';
 import { commentairesApi, postsApi } from '@/lib/services/posts';
 import type { PostResponse, TypePost } from '@/lib/types/posts';
+import { FileDrop } from '@/components/file-drop';
 import { formatDateTime, fullName } from '@/lib/format';
 import { PageHeader } from '@/components/page-header';
 import { EmptyState, ErrorState } from '@/components/states';
@@ -195,6 +204,9 @@ function PostCard({
             pending={deleteMutation.isPending}
           />
         )}
+        {user && post.typePost === 'POSTE_TRAVAIL' && (
+          <ApplyDialog post={post} className="ms-auto" />
+        )}
       </CardFooter>
 
       {showComments && (
@@ -203,6 +215,114 @@ function PostCard({
         </div>
       )}
     </Card>
+  );
+}
+
+function ApplyDialog({
+  post,
+  className,
+}: {
+  post: PostResponse;
+  className?: string;
+}) {
+  const { dict } = useI18n();
+  const t = dict.forum;
+  const { user } = useSession();
+  const [open, setOpen] = React.useState(false);
+  const [cv, setCv] = React.useState<File | undefined>(undefined);
+  const [motivation, setMotivation] = React.useState('');
+  const [error, setError] = React.useState<string | undefined>(undefined);
+
+  const applyMutation = useApiMutation<
+    {
+      cv: File;
+      motivationLetter: string;
+      poste: string;
+      userId: number;
+      postId: number;
+    },
+    unknown
+  >((data) => applicationsApi.apply(data), {
+    onSuccess: () => {
+      toast.success(t.successApplied);
+      setOpen(false);
+      setCv(undefined);
+      setMotivation('');
+    },
+    onError: (err) => {
+      if (err.message.includes('déjà')) {
+        setError(t.alreadyApplied);
+      } else {
+        toast.error(err.message);
+      }
+    },
+  });
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) {
+          setError(undefined);
+          setCv(undefined);
+          setMotivation('');
+        }
+      }}
+    >
+      <DialogTrigger
+        render={
+          <Button size="sm" className={className}>
+            <Briefcase className="size-4" /> {t.apply}
+          </Button>
+        }
+      />
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{t.applyDialogTitle}</DialogTitle>
+          <DialogDescription>{t.applyDialogDesc}</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-1">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">{t.cvLabel}</label>
+            <FileDrop
+              accept={{ 'application/pdf': ['.pdf'] }}
+              maxSize={10 * 1024 * 1024}
+              onFileSelect={setCv}
+              onClear={() => setCv(undefined)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">{t.motivationLabel}</label>
+            <Textarea
+              value={motivation}
+              onChange={(e) => setMotivation(e.target.value)}
+              placeholder={t.motivationPlaceholder}
+              rows={4}
+            />
+          </div>
+          {error && <p className="text-destructive text-xs">{error}</p>}
+          <DialogFooter className="pt-2">
+            <Button
+              onClick={() =>
+                user &&
+                cv &&
+                applyMutation.mutate({
+                  cv,
+                  motivationLetter: motivation,
+                  poste: post.contenu,
+                  userId: user.id,
+                  postId: post.id,
+                })
+              }
+              disabled={!cv || !user || applyMutation.isPending}
+            >
+              {applyMutation.isPending ? t.submittingApply : t.apply}
+            </Button>
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
