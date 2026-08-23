@@ -92,7 +92,7 @@ export default function ForumPage() {
       {error ? (
         <ErrorState onRetry={refetch} description={error.message} />
       ) : loading ? (
-        <div className="mx-auto grid max-w-2xl gap-4">
+        <div className="grid gap-4">
           {Array.from({ length: 3 }, (_, i) => {
             return <Skeleton key={i} className="h-48 w-full" />;
           })}
@@ -105,7 +105,7 @@ export default function ForumPage() {
           action={user ? <NewPostDialog onCreated={refetch} /> : undefined}
         />
       ) : (
-        <div className="mx-auto grid max-w-2xl gap-4">
+        <div className="grid gap-4">
           {(posts ?? []).map((post) => (
             <PostCard key={post.id} post={post} onChanged={refetch} />
           ))}
@@ -127,15 +127,18 @@ function PostCard({
   const { user } = useSession();
   const canModerate = hasMinimumRole(user?.role, 'HR');
   const canDelete = canModerate || post.auteurId === user?.id;
-  const [showComments, setShowComments] = React.useState(false);
+  const [showComments, setShowComments] = React.useState(true);
+  const [likeCount, setLikeCount] = React.useState(post.nombreLikes);
 
   const authorName = fullName(post.auteurName, post.auteurLastname);
 
   const likeMutation = useApiMutation<number, PostResponse>(
     (postId) => postsApi.like(postId, user?.id ?? 0),
     {
-      invalidate: ['posts.list'],
       onError: (err) => toast.error(err.message),
+      onSuccess: (data) => {
+        setLikeCount(data.nombreLikes);
+      },
     }
   );
 
@@ -152,48 +155,50 @@ function PostCard({
   );
 
   return (
-    <Card className="overflow-hidden rounded-2xl shadow-sm">
-      <CardHeader className="gap-3 p-4 pb-0">
-        <div className="flex items-center gap-3">
-          <Avatar className="size-10">
+    <Card className="overflow-hidden rounded-2xl shadow-md transition-shadow hover:shadow-lg">
+      <CardHeader className="gap-4 p-6 pb-4">
+        <div className="flex items-start gap-4">
+          <Avatar className="size-12 ring-2 ring-background">
             <AvatarImage src={undefined} />
-            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+            <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
               {authorName.replace('—', '').trim().charAt(0) || '?'}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold">{authorName}</p>
-            <p className="text-muted-foreground text-xs">
+            <div className="flex items-center gap-2.5">
+              <p className="text-base font-semibold">{authorName}</p>
+              <Badge
+                variant="outline"
+                className={cn('text-xs font-medium ring-1', typeStyles[post.typePost])}
+              >
+                {t.types[post.typePost]}
+              </Badge>
+            </div>
+            <p className="text-muted-foreground text-xs mt-0.5">
               {formatDateTime(post.dateCreation)}
             </p>
           </div>
-          <Badge
-            variant="outline"
-            className={cn('font-medium ring-1', typeStyles[post.typePost])}
-          >
-            {t.types[post.typePost]}
-          </Badge>
         </div>
       </CardHeader>
-      <CardContent className="p-4">
-        <p className="text-sm leading-relaxed whitespace-pre-wrap">
+      <CardContent className="px-6 pb-4">
+        <p className="text-base leading-relaxed whitespace-pre-wrap">
           {post.contenu}
         </p>
       </CardContent>
-      <CardFooter className="bg-muted/20 gap-1 border-t px-4 py-2">
+      <CardFooter className="bg-muted/30 gap-2 border-t px-6 py-3 justify-center">
         <Button
           variant="ghost"
           size="sm"
-          className="text-muted-foreground hover:text-primary"
+          className="text-muted-foreground hover:text-primary gap-2"
           onClick={() => user && likeMutation.mutate(post.id)}
           disabled={!user || likeMutation.isPending}
         >
-          <Heart className="size-4" /> {post.nombreLikes} {t.likes}
+          <Heart className="size-4" /> {likeCount} {t.likes}
         </Button>
         <Button
           variant="ghost"
           size="sm"
-          className="text-muted-foreground"
+          className="text-muted-foreground gap-2"
           onClick={() => setShowComments((v) => !v)}
         >
           <MessagesSquare className="size-4" /> {t.comments}
@@ -205,12 +210,12 @@ function PostCard({
           />
         )}
         {user && post.typePost === 'POSTE_TRAVAIL' && (
-          <ApplyDialog post={post} className="ms-auto" />
+          <ApplyDialog post={post} />
         )}
       </CardFooter>
 
       {showComments && (
-        <div className="bg-background/50 border-t px-4 py-3">
+        <div className="bg-muted/20 border-t px-6 py-4">
           <CommentsList postId={post.id} />
         </div>
       )}
@@ -463,6 +468,7 @@ function CommentsList({ postId }: { postId: number }) {
   const { user } = useSession();
   const canModerate = hasMinimumRole(user?.role, 'HR');
   const [text, setText] = React.useState('');
+  const [showAll, setShowAll] = React.useState(false);
 
   const {
     data: comments,
@@ -472,6 +478,9 @@ function CommentsList({ postId }: { postId: number }) {
   } = useApi(['posts.comments', String(postId)], () =>
     commentairesApi.listByPost(postId)
   );
+
+  const visibleComments = showAll ? (comments ?? []) : (comments ?? []).slice(0, 2);
+  const hasMore = (comments ?? []).length > 2;
 
   const createMutation = useApiMutation<
     { postId: number; userId: number; contenu: string },
@@ -500,17 +509,17 @@ function CommentsList({ postId }: { postId: number }) {
   return (
     <div className="space-y-3">
       {user && (
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-end">
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={t.commentPlaceholder}
-            rows={2}
-            className="min-h-9 flex-1 resize-none text-sm"
+            rows={1}
+            className="min-h-[38px] flex-1 resize-none text-sm"
           />
           <Button
             size="sm"
-            className="self-end"
+            className="h-[38px] px-4"
             onClick={() =>
               createMutation.mutate({
                 postId,
@@ -537,7 +546,7 @@ function CommentsList({ postId }: { postId: number }) {
         <p className="text-muted-foreground text-xs">{t.noComments}</p>
       ) : (
         <div className="space-y-2">
-          {(comments ?? []).map((comment) => {
+          {visibleComments.map((comment) => {
             const name = fullName(
               comment.auteur?.name,
               comment.auteur?.lastname
@@ -579,6 +588,16 @@ function CommentsList({ postId }: { postId: number }) {
               </div>
             );
           })}
+          {hasMore && !showAll && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-muted-foreground hover:text-primary"
+              onClick={() => setShowAll(true)}
+            >
+              Load more ({(comments ?? []).length - 2} more)
+            </Button>
+          )}
         </div>
       )}
     </div>
