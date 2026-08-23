@@ -9,6 +9,7 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
+  Info,
   Plus,
   ThumbsUp,
   X,
@@ -394,9 +395,22 @@ function LeaveRow({ leave }: { leave: LeaveResponse }) {
 function RequestLeaveDialog() {
   const { dict } = useI18n();
   const t = dict.leaves;
+  const { userId, user } = useSession();
+  const canManage = hasMinimumRole(user?.role, 'HR');
   const [open, setOpen] = React.useState(false);
   const employees = useApi('employees.list', () => employeesApi.list());
-  const users = useApi('users.list', () => usersApi.list());
+  const users = useApi('users.list', () => usersApi.list(), {
+    enabled: canManage,
+  });
+
+  // Employees always file for themselves; managers pick anyone
+  const myEmployee = React.useMemo(
+    () =>
+      !canManage && userId !== undefined
+        ? employees.data?.find((e) => e.userId === userId)
+        : undefined,
+    [canManage, userId, employees.data]
+  );
 
   const userMap = React.useMemo(() => {
     const m = new Map<number, User>();
@@ -416,6 +430,12 @@ function RequestLeaveDialog() {
       reason: '',
     },
   });
+
+  React.useEffect(() => {
+    if (!canManage && myEmployee) {
+      form.setValue('employeeId', myEmployee.id);
+    }
+  }, [canManage, myEmployee, form, open]);
 
   const requestMutation = useApiMutation<LeaveFormValues, LeaveResponse>(
     (body) => leavesApi.request(body),
@@ -447,39 +467,55 @@ function RequestLeaveDialog() {
           className="grid gap-4 py-1"
         >
           <FieldGroup>
-            <Controller
-              control={form.control}
-              name="employeeId"
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="leave-employee">{t.employee}</FieldLabel>
-                  <Select
-                    name={field.name}
-                    value={String(field.value || '')}
-                    onValueChange={(v) => field.onChange(Number(v))}
-                  >
-                    <SelectTrigger
-                      id="leave-employee"
-                      aria-invalid={fieldState.invalid}
+            {canManage && (
+              <Controller
+                control={form.control}
+                name="employeeId"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="leave-employee">
+                      {t.employee}
+                    </FieldLabel>
+                    <Select
+                      name={field.name}
+                      value={String(field.value || '')}
+                      onValueChange={(v) => field.onChange(Number(v))}
                     >
-                      <SelectValue placeholder={t.selectEmployee} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {employeeOptions(employees.data ?? [], userMap).map(
-                        (o) => (
-                          <SelectItem key={o.id} value={String(o.id)}>
-                            {o.name}
-                          </SelectItem>
-                        )
-                      )}
-                    </SelectContent>
-                  </Select>
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
+                      <SelectTrigger
+                        id="leave-employee"
+                        aria-invalid={fieldState.invalid}
+                      >
+                        <SelectValue placeholder={t.selectEmployee} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employeeOptions(employees.data ?? [], userMap).map(
+                          (o) => (
+                            <SelectItem key={o.id} value={String(o.id)}>
+                              {o.name}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            )}
+
+            {!canManage && employees.data && !myEmployee && (
+              <div className="border-chart-3/30 bg-chart-3/5 flex items-start gap-2.5 rounded-xl border p-3">
+                <Info className="text-chart-3 mt-0.5 size-4 shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium">{dict.dashboard.noProfileLink}</p>
+                  <p className="text-muted-foreground">
+                    {dict.dashboard.noProfileLinkDesc}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <Controller
               control={form.control}
@@ -571,7 +607,12 @@ function RequestLeaveDialog() {
           </FieldGroup>
 
           <DialogFooter className="pt-2">
-            <Button type="submit" disabled={requestMutation.isPending}>
+            <Button
+              type="submit"
+              disabled={
+                requestMutation.isPending || (!canManage && !myEmployee)
+              }
+            >
               {requestMutation.isPending ? t.sending : t.sendRequest}
             </Button>
           </DialogFooter>

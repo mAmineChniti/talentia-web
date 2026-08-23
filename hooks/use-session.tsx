@@ -40,6 +40,8 @@ export function SessionProvider({
     queryKey: [...SESSION_USER_KEY, userId],
     queryFn: () => usersApi.get(userId as number),
     enabled: userId !== undefined,
+    // The cookie seed carries no lastname — always revalidate the full record
+    staleTime: 0,
     initialData: initialSession
       ? {
           id: initialSession.id,
