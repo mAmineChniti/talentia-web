@@ -19,8 +19,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { PolarAngleAxis, RadialBar, RadialBarChart } from 'recharts';
+
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
+import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import { createInterviewSchema } from '@/lib/schemas/interviews';
 import { applicationsApi } from '@/lib/services/applications';
 import { interviewsApi } from '@/lib/services/interviews';
@@ -107,43 +110,41 @@ function Stars({ value, className }: { value: number; className?: string }) {
 }
 
 function ScoreRing({ score, size = 56 }: { score: number; size?: number }) {
-  const stroke = 5;
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
   const clamped = Math.min(Math.max(score, 0), 100);
-  const offset = circumference - (clamped / 100) * circumference;
   const color =
     clamped >= 70
-      ? 'var(--color-chart-2)'
+      ? 'var(--chart-2)'
       : clamped >= 40
-        ? 'var(--color-chart-3)'
-        : 'var(--color-chart-5)';
+        ? 'var(--chart-3)'
+        : 'var(--chart-5)';
+
+  const config = {
+    score: {
+      label: `${clamped}%`,
+      color,
+    },
+  } satisfies ChartConfig;
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="var(--color-muted)"
-          strokeWidth={stroke}
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          className="transition-all duration-700"
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
+      <ChartContainer config={config} className="aspect-square w-full">
+        <RadialBarChart
+          data={[{ name: 'score', value: clamped }]}
+          innerRadius="80%"
+          outerRadius="97%"
+          startAngle={90}
+          endAngle={-270}
+        >
+          <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+          <RadialBar
+            dataKey="value"
+            fill="var(--color-score)"
+            background
+            cornerRadius={999}
+          />
+        </RadialBarChart>
+      </ChartContainer>
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <span
           className="font-heading text-sm font-semibold tabular-nums"
           style={{ color }}

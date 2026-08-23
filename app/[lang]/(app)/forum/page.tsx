@@ -158,7 +158,7 @@ function PostCard({
     <Card className="overflow-hidden rounded-2xl shadow-md transition-shadow hover:shadow-lg">
       <CardHeader className="gap-4 p-6 pb-4">
         <div className="flex items-start gap-4">
-          <Avatar className="size-12 ring-2 ring-background">
+          <Avatar className="ring-background size-12 ring-2">
             <AvatarImage src={undefined} />
             <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
               {authorName.replace('—', '').trim().charAt(0) || '?'}
@@ -169,12 +169,15 @@ function PostCard({
               <p className="text-base font-semibold">{authorName}</p>
               <Badge
                 variant="outline"
-                className={cn('text-xs font-medium ring-1', typeStyles[post.typePost])}
+                className={cn(
+                  'text-xs font-medium ring-1',
+                  typeStyles[post.typePost]
+                )}
               >
                 {t.types[post.typePost]}
               </Badge>
             </div>
-            <p className="text-muted-foreground text-xs mt-0.5">
+            <p className="text-muted-foreground mt-0.5 text-xs">
               {formatDateTime(post.dateCreation)}
             </p>
           </div>
@@ -185,7 +188,7 @@ function PostCard({
           {post.contenu}
         </p>
       </CardContent>
-      <CardFooter className="bg-muted/30 gap-2 border-t px-6 py-3 justify-center">
+      <CardFooter className="bg-muted/30 justify-center gap-2 border-t px-6 py-3">
         <Button
           variant="ghost"
           size="sm"
@@ -479,7 +482,9 @@ function CommentsList({ postId }: { postId: number }) {
     commentairesApi.listByPost(postId)
   );
 
-  const visibleComments = showAll ? (comments ?? []) : (comments ?? []).slice(0, 2);
+  const visibleComments = showAll
+    ? (comments ?? [])
+    : (comments ?? []).slice(0, 2);
   const hasMore = (comments ?? []).length > 2;
 
   const createMutation = useApiMutation<
@@ -509,7 +514,7 @@ function CommentsList({ postId }: { postId: number }) {
   return (
     <div className="space-y-3">
       {user && (
-        <div className="flex gap-2 items-end">
+        <div className="flex items-end gap-2">
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -592,7 +597,7 @@ function CommentsList({ postId }: { postId: number }) {
             <Button
               variant="ghost"
               size="sm"
-              className="w-full text-muted-foreground hover:text-primary"
+              className="text-muted-foreground hover:text-primary w-full"
               onClick={() => setShowAll(true)}
             >
               Load more ({(comments ?? []).length - 2} more)
