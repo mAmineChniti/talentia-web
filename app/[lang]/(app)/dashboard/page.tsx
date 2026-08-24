@@ -64,12 +64,13 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Pie,
   PieChart,
+  Rectangle,
   XAxis,
   YAxis,
 } from 'recharts';
+import type { BarShapeProps } from 'recharts';
 
 const CHART_COLORS = [
   'var(--chart-1)',
@@ -78,6 +79,12 @@ const CHART_COLORS = [
   'var(--chart-4)',
   'var(--chart-5)',
 ];
+
+// Replaces deprecated <Cell> children: per-bar fill comes from each row's
+// `fill` property (https://recharts.github.io/en-US/guide/cell/).
+function PerEntryFillBar(props: BarShapeProps) {
+  return <Rectangle {...props} fill={props.payload?.fill ?? props.fill} />;
+}
 
 function colorFor(index: number) {
   return CHART_COLORS[index % CHART_COLORS.length];
@@ -817,12 +824,12 @@ export default function DashboardPage() {
                     allowDecimals={false}
                   />
                   <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                  <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={48}>
-                    {leavesStatusData.map((entry) => (
-                      // eslint-disable-next-line @typescript-eslint/no-deprecated
-                      <Cell key={entry.name} fill={entry.fill} />
-                    ))}
-                  </Bar>
+                  <Bar
+                    dataKey="count"
+                    shape={PerEntryFillBar}
+                    radius={[6, 6, 0, 0]}
+                    maxBarSize={48}
+                  />
                 </BarChart>
               </ChartContainer>
             </CardContent>
@@ -970,15 +977,10 @@ export default function DashboardPage() {
                         />
                         <Bar
                           dataKey="value"
-                          fill="var(--color-value)"
+                          shape={PerEntryFillBar}
                           radius={[0, 6, 6, 0]}
                           maxBarSize={18}
-                        >
-                          {byDept.map((entry) => (
-                            // eslint-disable-next-line @typescript-eslint/no-deprecated
-                            <Cell key={entry.name} fill={entry.fill} />
-                          ))}
-                        </Bar>
+                        />
                       </BarChart>
                     </ChartContainer>
                   ) : (
