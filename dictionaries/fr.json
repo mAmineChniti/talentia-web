@@ -375,7 +375,8 @@
       "newPassword": "Laisser vide pour conserver"
     },
     "photo": "Photo de profil",
-    "photoHint": "PNG, JPG ou GIF — 2 Mo max"
+    "photoHint": "PNG, JPG ou GIF — 2 Mo max",
+    "changePhoto": "Cliquez pour changer votre photo de profil"
   },
   "states": {
     "errorTitle": "Impossible de charger les données",
@@ -860,6 +861,7 @@
     "like": "J'aime",
     "liked": "J'aime",
     "noComments": "Aucun commentaire. Lancez la discussion !",
+    "loadMore": "Afficher plus",
     "cancel": "Annuler",
     "apply": "Postuler",
     "applyDialogTitle": "Postuler à cette offre",
@@ -869,7 +871,8 @@
     "motivationPlaceholder": "Dites-nous pourquoi vous êtes le bon profil…",
     "submittingApply": "Envoi…",
     "successApplied": "Candidature envoyée",
-    "alreadyApplied": "Vous avez déjà postulé à cette offre."
+    "alreadyApplied": "Vous avez déjà postulé à cette offre.",
+    "appliedState": "Postulé"
   },
   "forgotPassword": {
     "title": "Mot de passe oublié",

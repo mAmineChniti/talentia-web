@@ -375,7 +375,8 @@
       "newPassword": "اتركه فارغًا للإبقاء عليه"
     },
     "photo": "الصورة الشخصية",
-    "photoHint": "PNG أو JPG أو GIF — 2 ميجابايت كحد أقصى"
+    "photoHint": "PNG أو JPG أو GIF — 2 ميجابايت كحد أقصى",
+    "changePhoto": "انقر لتغيير صورتك الشخصية"
   },
   "states": {
     "errorTitle": "تعذر تحميل البيانات",
@@ -860,6 +861,7 @@
     "like": "إعجاب",
     "liked": "تم الإعجاب",
     "noComments": "لا توجد تعليقات بعد. ابدأ النقاش!",
+    "loadMore": "عرض المزيد",
     "cancel": "إلغاء",
     "apply": "تقدّم",
     "applyDialogTitle": "تقدّم لهذه الوظيفة",
@@ -869,7 +871,8 @@
     "motivationPlaceholder": "أخبرنا لماذا أنت الشخص المناسب…",
     "submittingApply": "جارٍ الإرسال…",
     "successApplied": "تم إرسال الطلب",
-    "alreadyApplied": "لقد تقدمت بالفعل لهذه الوظيفة."
+    "alreadyApplied": "لقد تقدمت بالفعل لهذه الوظيفة.",
+    "appliedState": "تم التقديم"
   },
   "forgotPassword": {
     "title": "نسيت كلمة المرور",

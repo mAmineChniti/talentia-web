@@ -3,6 +3,7 @@
 import * as React from 'react';
 import {
   Briefcase,
+  CheckCircle2,
   Heart,
   MessagesSquare,
   Plus,
@@ -62,6 +63,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
+const POSTS_PER_PAGE = 5;
+
 const typeStyles: Record<TypePost, string> = {
   PUBLICITE: 'bg-chart-4/15 text-chart-4 ring-chart-4/20',
   POSTE_TRAVAIL: 'bg-chart-2/15 text-chart-2 ring-chart-2/20',
@@ -72,12 +75,28 @@ export default function ForumPage() {
   const { dict } = useI18n();
   const t = dict.forum;
   const { user } = useSession();
+  const [visibleCount, setVisibleCount] = React.useState(POSTS_PER_PAGE);
   const {
     data: posts,
     loading,
     error,
     refetch,
   } = useApi('posts.list', () => postsApi.list());
+
+  const { data: allApplications } = useApi(
+    'applications.list',
+    () => applicationsApi.list(),
+    { enabled: !!user }
+  );
+  const appliedPostIds = React.useMemo(
+    () =>
+      new Set(
+        (allApplications ?? [])
+          .filter((a) => a.candidateEmail === user?.email)
+          .map((a) => a.postId)
+      ),
+    [allApplications, user?.email]
+  );
 
   return (
     <div className="grid gap-6">
@@ -106,9 +125,23 @@ export default function ForumPage() {
         />
       ) : (
         <div className="grid gap-4">
-          {(posts ?? []).map((post) => (
-            <PostCard key={post.id} post={post} onChanged={refetch} />
+          {(posts ?? []).slice(0, visibleCount).map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              applied={appliedPostIds.has(post.id)}
+              onChanged={refetch}
+            />
           ))}
+          {(posts?.length ?? 0) > visibleCount && (
+            <Button
+              variant="outline"
+              className="mx-auto rounded-full px-6"
+              onClick={() => setVisibleCount((count) => count + POSTS_PER_PAGE)}
+            >
+              {t.loadMore} ({posts!.length - visibleCount})
+            </Button>
+          )}
         </div>
       )}
     </div>
@@ -117,9 +150,11 @@ export default function ForumPage() {
 
 function PostCard({
   post,
+  applied,
   onChanged,
 }: {
   post: PostResponse;
+  applied: boolean;
   onChanged: () => void;
 }) {
   const { dict } = useI18n();
@@ -212,9 +247,11 @@ function PostCard({
             pending={deleteMutation.isPending}
           />
         )}
-        {user && post.typePost === 'POSTE_TRAVAIL' && (
-          <ApplyDialog post={post} />
-        )}
+        {user &&
+          post.typePost === 'POSTE_TRAVAIL' &&
+          post.auteurId !== user.id && (
+            <ApplyDialog post={post} applied={applied} />
+          )}
       </CardFooter>
 
       {showComments && (
@@ -228,9 +265,11 @@ function PostCard({
 
 function ApplyDialog({
   post,
+  applied,
   className,
 }: {
   post: PostResponse;
+  applied: boolean;
   className?: string;
 }) {
   const { dict } = useI18n();
@@ -251,6 +290,7 @@ function ApplyDialog({
     },
     unknown
   >((data) => applicationsApi.apply(data), {
+    invalidate: ['applications.list'],
     onSuccess: () => {
       toast.success(t.successApplied);
       setOpen(false);
@@ -265,6 +305,19 @@ function ApplyDialog({
       }
     },
   });
+
+  if (applied) {
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        disabled
+        className={cn('text-muted-foreground', className)}
+      >
+        <CheckCircle2 className="size-4" /> {t.appliedState}
+      </Button>
+    );
+  }
 
   return (
     <Dialog

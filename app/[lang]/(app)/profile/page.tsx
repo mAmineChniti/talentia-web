@@ -3,12 +3,14 @@
 import * as React from 'react';
 import { useForm, Controller, type UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useDropzone } from 'react-dropzone';
 import {
   Briefcase,
   Building2,
   Camera,
   Globe,
   Link,
+  Loader2,
   Lock,
   Mail,
   MapPin,
@@ -47,7 +49,6 @@ import {
   FieldGroup,
   FieldLabel,
 } from '@/components/ui/field';
-import { FileDrop } from '@/components/file-drop';
 
 export default function ProfilePage() {
   const { dict } = useI18n();
@@ -85,6 +86,17 @@ export default function ProfilePage() {
     photoMutation.mutate(file);
   }
 
+  const avatarDropzone = useDropzone({
+    accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'] },
+    maxSize: 5 * 1024 * 1024,
+    maxFiles: 1,
+    disabled: photoMutation.isPending,
+    onDrop: (acceptedFiles) => {
+      const file = acceptedFiles[0];
+      if (file) handlePhotoSelect(file);
+    },
+  });
+
   const meta = [
     { icon: <Mail className="size-3.5" />, value: user?.email },
     {
@@ -112,15 +124,30 @@ export default function ProfilePage() {
         <div className="bg-brand-2/30 pointer-events-none absolute -start-16 -bottom-28 size-80 rounded-full blur-3xl" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.12),transparent_45%)]" />
         <div className="relative flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-8">
-          <Avatar className="ring-background/40 size-24 rounded-2xl border-4 border-white/25 shadow-xl backdrop-blur">
-            <AvatarImage
-              src={user?.profileImageUrl}
-              alt={fullName(user?.name, user?.lastname)}
-            />
-            <AvatarFallback className="from-primary/20 to-brand-2/20 rounded-2xl text-2xl font-semibold">
-              {initials(user?.name, user?.lastname)}
-            </AvatarFallback>
-          </Avatar>
+          <div
+            {...avatarDropzone.getRootProps()}
+            role="button"
+            aria-label={t.changePhoto}
+            className="group focus-visible:ring-ring relative shrink-0 cursor-pointer rounded-2xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            <Avatar className="ring-background/40 size-24 rounded-2xl border-4 border-white/25 shadow-xl backdrop-blur">
+              <AvatarImage
+                src={user?.profileImageUrl}
+                alt={fullName(user?.name, user?.lastname)}
+              />
+              <AvatarFallback className="from-primary/20 to-brand-2/20 rounded-2xl text-2xl font-semibold">
+                {initials(user?.name, user?.lastname)}
+              </AvatarFallback>
+            </Avatar>
+            <input {...avatarDropzone.getInputProps()} className="hidden" />
+            <div className="absolute inset-0 flex items-center justify-center rounded-2xl border-4 border-white/25 bg-black/45 text-white opacity-0 transition-opacity group-hover:opacity-100">
+              {photoMutation.isPending ? (
+                <Loader2 className="size-6 animate-spin" />
+              ) : (
+                <Camera className="size-6" />
+              )}
+            </div>
+          </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium tracking-wide text-white/70 uppercase">
               {user?.role}
@@ -147,248 +174,208 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[320px_1fr]">
+      <form
+        onSubmit={form.handleSubmit((values) => updateMutation.mutate(values))}
+        className="grid gap-6"
+      >
         <Card className="overflow-hidden rounded-2xl shadow-sm">
           <CardHeader className="bg-muted/25 border-b">
-            <CardTitle className="text-base">{t.photo}</CardTitle>
-            <CardDescription>{t.photoHint}</CardDescription>
+            <div className="flex items-center gap-3">
+              <span className="from-primary/15 to-brand-2/15 text-primary flex size-9 items-center justify-center rounded-xl bg-linear-to-br ring-1 ring-black/5">
+                <UserRound className="size-4.5" />
+              </span>
+              <div>
+                <CardTitle className="text-base">{t.personal}</CardTitle>
+                <CardDescription>{t.personalHint}</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="flex flex-col items-center gap-4 pt-6 text-center">
-            <Avatar className="ring-background size-28 rounded-2xl shadow-md ring-4">
-              <AvatarImage
-                src={user?.profileImageUrl}
-                alt={fullName(user?.name, user?.lastname)}
+          <CardContent className="pt-5">
+            <FieldGroup>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <TextController
+                  name="name"
+                  label={t.fields.name}
+                  placeholder={t.placeholders.name}
+                  form={form}
+                  required
+                />
+                <TextController
+                  name="lastname"
+                  label={t.fields.lastname}
+                  placeholder={t.placeholders.lastname}
+                  form={form}
+                  required
+                />
+              </div>
+              <TextController
+                name="email"
+                label={t.fields.email}
+                placeholder={t.placeholders.email}
+                form={form}
+                type="email"
+                required
               />
-              <AvatarFallback className="from-primary/10 to-brand-2/10 rounded-2xl text-3xl font-semibold">
-                {initials(user?.name, user?.lastname)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="space-y-0.5">
-              <p className="text-sm font-semibold">
-                {fullName(user?.name, user?.lastname)}
-              </p>
-              <p className="text-muted-foreground text-xs">{user?.email}</p>
-            </div>
-            <div className="bg-primary/10 text-primary inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold">
-              <ShieldCheck className="size-3.5" /> {user?.role}
-            </div>
-            <FileDrop
-              onFileSelect={handlePhotoSelect}
-              currentPreview={user?.profileImageUrl}
-              disabled={photoMutation.isPending}
-              className="w-full"
-            />
-            <p className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
-              <Camera className="size-3.5" /> {t.photoHint}
-            </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <TextController
+                  name="city"
+                  label={t.fields.city}
+                  placeholder={t.placeholders.city}
+                  form={form}
+                />
+                <TextController
+                  name="country"
+                  label={t.fields.country}
+                  placeholder={t.placeholders.country}
+                  form={form}
+                />
+              </div>
+              <TextController
+                name="telephone"
+                label={t.fields.telephone}
+                placeholder={t.placeholders.telephone}
+                form={form}
+                type="tel"
+              />
+            </FieldGroup>
           </CardContent>
         </Card>
 
-        <form
-          onSubmit={form.handleSubmit((values) =>
-            updateMutation.mutate(values)
-          )}
-          className="grid gap-6"
-        >
-          <Card className="overflow-hidden rounded-2xl shadow-sm">
-            <CardHeader className="bg-muted/25 border-b">
-              <div className="flex items-center gap-3">
-                <span className="from-primary/15 to-brand-2/15 text-primary flex size-9 items-center justify-center rounded-xl bg-linear-to-br ring-1 ring-black/5">
-                  <UserRound className="size-4.5" />
-                </span>
-                <div>
-                  <CardTitle className="text-base">{t.personal}</CardTitle>
-                  <CardDescription>{t.personalHint}</CardDescription>
-                </div>
+        <Card className="overflow-hidden rounded-2xl shadow-sm">
+          <CardHeader className="bg-muted/25 border-b">
+            <div className="flex items-center gap-3">
+              <span className="from-primary/15 to-brand-2/15 text-primary flex size-9 items-center justify-center rounded-xl bg-linear-to-br ring-1 ring-black/5">
+                <Briefcase className="size-4.5" />
+              </span>
+              <div>
+                <CardTitle className="text-base">{t.professional}</CardTitle>
+                <CardDescription>{t.professionalHint}</CardDescription>
               </div>
-            </CardHeader>
-            <CardContent className="pt-5">
-              <FieldGroup>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <TextController
-                    name="name"
-                    label={t.fields.name}
-                    placeholder={t.placeholders.name}
-                    form={form}
-                    required
-                  />
-                  <TextController
-                    name="lastname"
-                    label={t.fields.lastname}
-                    placeholder={t.placeholders.lastname}
-                    form={form}
-                    required
-                  />
-                </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-5">
+            <FieldGroup>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <TextController
-                  name="email"
-                  label={t.fields.email}
-                  placeholder={t.placeholders.email}
+                  name="profession"
+                  label={t.fields.profession}
+                  placeholder={t.placeholders.profession}
                   form={form}
-                  type="email"
-                  required
                 />
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <TextController
-                    name="city"
-                    label={t.fields.city}
-                    placeholder={t.placeholders.city}
-                    form={form}
-                  />
-                  <TextController
-                    name="country"
-                    label={t.fields.country}
-                    placeholder={t.placeholders.country}
-                    form={form}
-                  />
-                </div>
                 <TextController
-                  name="telephone"
-                  label={t.fields.telephone}
-                  placeholder={t.placeholders.telephone}
+                  name="posteActuel"
+                  label={t.fields.posteActuel}
+                  placeholder={t.placeholders.posteActuel}
                   form={form}
-                  type="tel"
                 />
-              </FieldGroup>
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden rounded-2xl shadow-sm">
-            <CardHeader className="bg-muted/25 border-b">
-              <div className="flex items-center gap-3">
-                <span className="from-primary/15 to-brand-2/15 text-primary flex size-9 items-center justify-center rounded-xl bg-linear-to-br ring-1 ring-black/5">
-                  <Briefcase className="size-4.5" />
-                </span>
-                <div>
-                  <CardTitle className="text-base">{t.professional}</CardTitle>
-                  <CardDescription>{t.professionalHint}</CardDescription>
-                </div>
               </div>
-            </CardHeader>
-            <CardContent className="pt-5">
-              <FieldGroup>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <TextController
-                    name="profession"
-                    label={t.fields.profession}
-                    placeholder={t.placeholders.profession}
-                    form={form}
-                  />
-                  <TextController
-                    name="posteActuel"
-                    label={t.fields.posteActuel}
-                    placeholder={t.placeholders.posteActuel}
-                    form={form}
-                  />
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <TextController
-                    name="entreprise"
-                    label={t.fields.entreprise}
-                    placeholder={t.placeholders.entreprise}
-                    form={form}
-                  />
-                  <TextController
-                    name="niveauExperience"
-                    label={t.fields.niveauExperience}
-                    placeholder={t.placeholders.niveauExperience}
-                    form={form}
-                  />
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <TextController
-                    name="linkedinUrl"
-                    label={t.fields.linkedinUrl}
-                    placeholder={t.placeholders.url}
-                    form={form}
-                    type="url"
-                  />
-                  <TextController
-                    name="githubUrl"
-                    label={t.fields.githubUrl}
-                    placeholder={t.placeholders.url}
-                    form={form}
-                    type="url"
-                  />
-                </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <TextController
-                  name="cvUrl"
-                  label={t.fields.cvUrl}
+                  name="entreprise"
+                  label={t.fields.entreprise}
+                  placeholder={t.placeholders.entreprise}
+                  form={form}
+                />
+                <TextController
+                  name="niveauExperience"
+                  label={t.fields.niveauExperience}
+                  placeholder={t.placeholders.niveauExperience}
+                  form={form}
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <TextController
+                  name="linkedinUrl"
+                  label={t.fields.linkedinUrl}
                   placeholder={t.placeholders.url}
                   form={form}
                   type="url"
                 />
-                <Field>
-                  <FieldLabel htmlFor="profile-aboutme">
-                    {t.fields.aboutme}
-                  </FieldLabel>
-                  <Controller
-                    control={form.control}
-                    name="aboutme"
-                    render={({ field }) => (
-                      <Textarea
-                        {...field}
-                        id="profile-aboutme"
-                        placeholder={t.placeholders.aboutme}
-                        className="bg-background border-border min-h-24"
-                      />
-                    )}
-                  />
-                </Field>
-              </FieldGroup>
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden rounded-2xl shadow-sm">
-            <CardHeader className="bg-muted/25 border-b">
-              <div className="flex items-center gap-3">
-                <span className="from-primary/15 to-brand-2/15 text-primary flex size-9 items-center justify-center rounded-xl bg-linear-to-br ring-1 ring-black/5">
-                  <Lock className="size-4.5" />
-                </span>
-                <div>
-                  <CardTitle className="text-base">{t.security}</CardTitle>
-                  <CardDescription>{t.securityHint}</CardDescription>
-                </div>
+                <TextController
+                  name="githubUrl"
+                  label={t.fields.githubUrl}
+                  placeholder={t.placeholders.url}
+                  form={form}
+                  type="url"
+                />
               </div>
-            </CardHeader>
-            <CardContent className="pt-5">
-              <FieldGroup>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <TextController
-                    name="newPassword"
-                    label={t.fields.newPassword}
-                    placeholder={t.placeholders.newPassword}
-                    form={form}
-                    type="password"
-                  />
-                  <div className="flex flex-col justify-end gap-2">
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck className="text-muted-foreground size-4" />
-                      <span className="text-sm font-medium">{t.role}</span>
-                    </div>
-                    <div className="from-primary/10 to-brand-2/10 text-primary flex h-9 items-center gap-2 rounded-lg bg-linear-to-r px-2.5 text-sm font-semibold ring-1 ring-black/5">
-                      <Building2 className="size-4" /> {user?.role}
-                    </div>
+              <TextController
+                name="cvUrl"
+                label={t.fields.cvUrl}
+                placeholder={t.placeholders.url}
+                form={form}
+                type="url"
+              />
+              <Field>
+                <FieldLabel htmlFor="profile-aboutme">
+                  {t.fields.aboutme}
+                </FieldLabel>
+                <Controller
+                  control={form.control}
+                  name="aboutme"
+                  render={({ field }) => (
+                    <Textarea
+                      {...field}
+                      id="profile-aboutme"
+                      placeholder={t.placeholders.aboutme}
+                      className="bg-background border-border min-h-24"
+                    />
+                  )}
+                />
+              </Field>
+            </FieldGroup>
+          </CardContent>
+        </Card>
+
+        <Card className="overflow-hidden rounded-2xl shadow-sm">
+          <CardHeader className="bg-muted/25 border-b">
+            <div className="flex items-center gap-3">
+              <span className="from-primary/15 to-brand-2/15 text-primary flex size-9 items-center justify-center rounded-xl bg-linear-to-br ring-1 ring-black/5">
+                <Lock className="size-4.5" />
+              </span>
+              <div>
+                <CardTitle className="text-base">{t.security}</CardTitle>
+                <CardDescription>{t.securityHint}</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-5">
+            <FieldGroup>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <TextController
+                  name="newPassword"
+                  label={t.fields.newPassword}
+                  placeholder={t.placeholders.newPassword}
+                  form={form}
+                  type="password"
+                />
+                <div className="flex flex-col justify-end gap-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="text-muted-foreground size-4" />
+                    <span className="text-sm font-medium">{t.role}</span>
+                  </div>
+                  <div className="from-primary/10 to-brand-2/10 text-primary flex h-9 items-center gap-2 rounded-lg bg-linear-to-r px-2.5 text-sm font-semibold ring-1 ring-black/5">
+                    <Building2 className="size-4" /> {user?.role}
                   </div>
                 </div>
-              </FieldGroup>
-            </CardContent>
-          </Card>
+              </div>
+            </FieldGroup>
+          </CardContent>
+        </Card>
 
-          <div className="sticky bottom-4 z-10 flex justify-end">
-            <div className="bg-card/90 flex items-center gap-3 rounded-2xl border p-2 shadow-lg backdrop-blur">
-              <Button
-                type="submit"
-                disabled={updateMutation.isPending}
-                className="px-6"
-              >
-                <Save />
-                {updateMutation.isPending ? t.saving : t.save}
-              </Button>
-            </div>
+        <div className="sticky bottom-4 z-10 flex justify-end">
+          <div className="bg-card/90 flex items-center gap-3 rounded-2xl border p-2 shadow-lg backdrop-blur">
+            <Button
+              type="submit"
+              disabled={updateMutation.isPending}
+              className="px-6"
+            >
+              <Save />
+              {updateMutation.isPending ? t.saving : t.save}
+            </Button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   );
 }

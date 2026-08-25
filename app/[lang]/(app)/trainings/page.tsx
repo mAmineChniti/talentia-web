@@ -212,7 +212,7 @@ function TrainingCard({
   );
 
   return (
-    <Card className="group flex flex-col overflow-hidden rounded-2xl shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+    <Card className="group flex flex-col overflow-hidden rounded-2xl py-0 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
       <div
         className={cn(
           'relative flex items-center gap-3 bg-linear-to-br p-4',

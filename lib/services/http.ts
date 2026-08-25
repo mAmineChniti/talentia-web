@@ -22,6 +22,67 @@ async function extractErrorText(
   }
 }
 
+const STATUS_FALLBACKS: Record<number, string> = {
+  400: 'Requête invalide',
+  401: 'Session expirée, veuillez vous reconnecter',
+  403: 'Accès refusé',
+  404: 'Ressource introuvable',
+  409: 'Conflit avec l’état actuel de la ressource',
+  500: 'Erreur interne du serveur',
+  502: 'Passerelle indisponible',
+  503: 'Service indisponible',
+};
+
+// The backend returns different error shapes depending on the endpoint:
+// plain text, HTML, its default JSON envelope ({timestamp,status,error,path})
+// or a JSON body carrying a real "message". Normalize everything into a
+// short human-readable sentence so UI toasts stay readable.
+function statusFallback(status: number): string {
+  return STATUS_FALLBACKS[status] ?? `Requête échouée avec le statut ${status}`;
+}
+
+function parseJsonSafe(text: string): Record<string, unknown> | undefined {
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return undefined;
+  }
+}
+
+function shortMessage(value: string): string {
+  return value.trim().slice(0, 300);
+}
+
+async function extractErrorMessage(response: Response): Promise<string> {
+  const fallback = statusFallback(response.status);
+
+  const raw = await extractErrorText(response);
+  const text = raw?.trim();
+  if (!text) return fallback;
+
+  if (text.startsWith('<')) {
+    const title = text.match(/<title>([^<]*)<\/title>/i)?.[1];
+    return title?.trim() || fallback;
+  }
+
+  if (!text.startsWith('{') && !text.startsWith('[')) {
+    return shortMessage(text);
+  }
+
+  const data = parseJsonSafe(text);
+  if (!data) return fallback;
+
+  if (typeof data.message === 'string' && data.message.trim()) {
+    return shortMessage(data.message);
+  }
+  const mapped = STATUS_FALLBACKS[response.status];
+  if (mapped) return mapped;
+  if (typeof data.error === 'string' && data.error.trim()) {
+    return shortMessage(data.error);
+  }
+  return fallback;
+}
+
 export async function request<T>(
   path: string,
   options: RequestOptions = {}
@@ -59,12 +120,7 @@ export async function request<T>(
   }
 
   if (!response.ok) {
-    const text = await extractErrorText(response);
-    throw new Error(
-      text
-        ? text.slice(0, 300)
-        : `Requête échouée avec le statut ${response.status}`
-    );
+    throw new Error(await extractErrorMessage(response));
   }
 
   if (response.status === 204) return undefined as T;

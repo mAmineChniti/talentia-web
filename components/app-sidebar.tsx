@@ -32,6 +32,8 @@ import {
 } from '@/components/ui/sidebar';
 import { useI18n } from '@/components/i18n-provider';
 import { useSession } from '@/hooks/use-session';
+import { useApi } from '@/hooks/use-api';
+import { employeesApi } from '@/lib/services/employees';
 import { canAccessRoute } from '@/lib/rbac';
 import { cn } from '@/lib/utils';
 
@@ -39,11 +41,22 @@ export function AppSidebar() {
   const pathname = usePathname();
   const { dict, lang } = useI18n();
   const { user } = useSession();
+  const { data: employees } = useApi(
+    'employees.list',
+    () => employeesApi.list(),
+    { enabled: !!user }
+  );
+  const isEmployee = (employees ?? []).some((e) => e.userId === user?.id);
   const s = dict.sidebar;
 
   const navMain: {
     label: string;
-    items: { title: string; url: string; icon: LucideIcon }[];
+    items: {
+      title: string;
+      url: string;
+      icon: LucideIcon;
+      employeeOnly?: boolean;
+    }[];
   }[] = [
     {
       label: s.overview,
@@ -60,7 +73,12 @@ export function AppSidebar() {
       items: [
         { title: s.employees, url: `/${lang}/employees`, icon: Users },
         { title: s.attendance, url: `/${lang}/attendance`, icon: ScanLine },
-        { title: s.leaves, url: `/${lang}/leaves`, icon: CalendarDays },
+        {
+          title: s.leaves,
+          url: `/${lang}/leaves`,
+          icon: CalendarDays,
+          employeeOnly: true,
+        },
       ],
     },
     {
@@ -78,6 +96,7 @@ export function AppSidebar() {
           title: s.trainings,
           url: `/${lang}/trainings`,
           icon: GraduationCap,
+          employeeOnly: true,
         },
         {
           title: s.recruitment,
@@ -116,8 +135,10 @@ export function AppSidebar() {
         {navMain
           .map((group) => ({
             ...group,
-            items: group.items.filter((item) =>
-              canAccessRoute(user?.role, item.url)
+            items: group.items.filter(
+              (item) =>
+                canAccessRoute(user?.role, item.url) &&
+                (!item.employeeOnly || isEmployee)
             ),
           }))
           .filter((group) => group.items.length > 0)

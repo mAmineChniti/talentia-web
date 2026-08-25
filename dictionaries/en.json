@@ -375,7 +375,8 @@
       "newPassword": "Leave empty to keep it"
     },
     "photo": "Profile photo",
-    "photoHint": "PNG, JPG or GIF — 2 MB max"
+    "photoHint": "PNG, JPG or GIF — 2 MB max",
+    "changePhoto": "Click to change your profile photo"
   },
   "states": {
     "errorTitle": "Couldn't load data",
@@ -860,6 +861,7 @@
     "like": "Like",
     "liked": "Liked",
     "noComments": "No comments yet. Start the discussion!",
+    "loadMore": "Load more",
     "cancel": "Cancel",
     "apply": "Apply",
     "applyDialogTitle": "Apply for this job",
@@ -869,7 +871,8 @@
     "motivationPlaceholder": "Tell us why you are a good fit…",
     "submittingApply": "Submitting…",
     "successApplied": "Application submitted",
-    "alreadyApplied": "You have already applied to this offer."
+    "alreadyApplied": "You have already applied to this offer.",
+    "appliedState": "Applied"
   },
   "forgotPassword": {
     "title": "Forgot password",
