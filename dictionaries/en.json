@@ -222,6 +222,12 @@
       "primaryCta": "Start for free",
       "secondaryCta": "Talk to sales"
     },
+    "community": {
+      "title": "Join our community",
+      "subtitle": "Connect with other HR professionals, ask questions and share ideas in the forum.",
+      "forumCta": "Visit the forum",
+      "tagline": "Discussions & support"
+    },
     "footer": {
       "rights": "All rights reserved.",
       "privacy": "Privacy",
@@ -237,7 +243,8 @@
       "pricing": "Pricing",
       "login": "Sign in",
       "register": "Get started",
-      "dashboard": "Dashboard"
+      "dashboard": "Dashboard",
+      "forum": "Forum"
     }
   },
   "login": {
@@ -376,7 +383,14 @@
     },
     "photo": "Profile photo",
     "photoHint": "PNG, JPG or GIF — 2 MB max",
-    "changePhoto": "Click to change your profile photo"
+    "changePhoto": "Click to change your profile photo",
+    "candidateProfile": {
+      "about": "About",
+      "professionalInfo": "Professional Info",
+      "links": "Links",
+      "applications": "Applications",
+      "cv": "CV"
+    }
   },
   "states": {
     "errorTitle": "Couldn't load data",
@@ -764,8 +778,18 @@
     "refuse": "Refuse",
     "scheduleInterview": "Schedule interview",
     "scheduleDialogTitle": "Schedule interview",
-    "scheduleDialogDesc": "Select the candidate and interview details.",
+    "scheduleDialogDesc": "Select a job posting, then an applicant, then set the interview details.",
     "selectCandidate": "Select an application…",
+    "step1Title": "1. Select a job posting",
+    "step2Title": "2. Select an applicant",
+    "step3Title": "3. Interview details",
+    "step1Desc": "Choose the job posting to schedule an interview for.",
+    "step2Desc": "Choose the applicant to interview.",
+    "step3Desc": "Set the date, time, and type of the interview.",
+    "back": "Back",
+    "noApplicantsForPost": "No applicants for this posting.",
+    "eligible": "Eligible",
+    "notEligible": "Not eligible",
     "typeLabel": "Type",
     "online": "Online",
     "onsite": "On-site",
@@ -783,7 +807,12 @@
     "deleteInterviewDesc": "This interview will be removed permanently.",
     "cancel": "Cancel",
     "successDeleted": "Interview deleted",
-    "delete": "Delete"
+    "delete": "Delete",
+    "jobPostings": "Job postings",
+    "jobPostingsTab": "Job postings",
+    "noJobPostings": "No job postings",
+    "noJobPostingsDesc": "Job postings will appear here once created.",
+    "motivationLetter": "Motivation Letter"
   },
   "trainings": {
     "title": "Trainings",
@@ -872,7 +901,19 @@
     "submittingApply": "Submitting…",
     "successApplied": "Application submitted",
     "alreadyApplied": "You have already applied to this offer.",
-    "appliedState": "Applied"
+    "appliedState": "Applied",
+    "filterAll": "All",
+    "filterJobOpenings": "Job openings",
+    "filterAnnouncements": "Announcements",
+    "filterTrainings": "Trainings",
+    "applicants": "Applicants",
+    "applicantsCount": "{count} applicant(s)",
+    "noApplicants": "No applicants yet",
+    "noApplicantsDesc": "Applications will appear here once candidates apply.",
+    "viewApplicants": "View applicants",
+    "hideApplicants": "Hide applicants",
+    "score": "Score",
+    "appliedOn": "Applied on"
   },
   "forgotPassword": {
     "title": "Forgot password",

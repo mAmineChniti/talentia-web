@@ -19,20 +19,19 @@ const PROTECTED_PREFIXES = [
   '/payslips',
   '/trainings',
   '/recruitment',
-  '/forum',
 ];
 
 const ROUTE_ROLES: Record<string, string[]> = {
-  dashboard: ['USER', 'HR', 'ADMIN'],
+  dashboard: ['EMPLOYEE', 'HR', 'ADMIN'],
   employees: ['HR', 'ADMIN'],
   attendance: ['HR', 'ADMIN'],
-  leaves: ['USER', 'HR', 'ADMIN'],
+  leaves: ['EMPLOYEE', 'HR', 'ADMIN'],
   contracts: ['HR', 'ADMIN'],
   payroll: ['ADMIN'],
   payslips: ['ADMIN'],
-  trainings: ['USER', 'HR', 'ADMIN'],
+  trainings: ['EMPLOYEE', 'HR', 'ADMIN'],
   recruitment: ['HR', 'ADMIN'],
-  forum: ['USER', 'HR', 'ADMIN'],
+  forum: ['CANDIDATE', 'EMPLOYEE', 'HR', 'ADMIN'],
 };
 
 function getLocale(request: NextRequest): Locale {

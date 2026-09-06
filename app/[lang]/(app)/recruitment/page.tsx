@@ -7,6 +7,10 @@ import type * as z from 'zod';
 import {
   Briefcase,
   CalendarClock,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
   CircleCheck,
   CircleX,
   MapPin,
@@ -15,30 +19,39 @@ import {
   Star,
   ThumbsUp,
   Trash2,
+  Users,
   Video,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 import { PolarAngleAxis, RadialBar, RadialBarChart } from 'recharts';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
-import { ChartContainer, type ChartConfig } from '@/components/ui/chart';
 import { createInterviewSchema } from '@/lib/schemas/interviews';
 import { applicationsApi } from '@/lib/services/applications';
 import { interviewsApi } from '@/lib/services/interviews';
+import { postsApi } from '@/lib/services/posts';
 import type { ApplicationResponse } from '@/lib/types/applications';
+import type { PostResponse } from '@/lib/types/posts';
 import type {
   InterviewRequest,
   InterviewResponse,
 } from '@/lib/types/interviews';
-import { formatDate, formatDateTime, initials } from '@/lib/format';
+import {
+  formatDate,
+  formatDateTime,
+  fullName,
+  initials,
+  parseList,
+} from '@/lib/format';
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
 import { StatusBadge } from '@/components/status-badge';
 import { EmptyState, ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -118,35 +131,33 @@ function ScoreRing({ score, size = 56 }: { score: number; size?: number }) {
         ? 'var(--chart-3)'
         : 'var(--chart-5)';
 
-  const config = {
-    score: {
-      label: `${clamped}%`,
-      color,
-    },
-  } satisfies ChartConfig;
+  const isSmall = size <= 44;
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <ChartContainer config={config} className="aspect-square w-full">
-        <RadialBarChart
-          data={[{ name: 'score', value: clamped }]}
-          innerRadius="80%"
-          outerRadius="97%"
-          startAngle={90}
-          endAngle={-270}
-        >
-          <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-          <RadialBar
-            dataKey="value"
-            fill="var(--color-score)"
-            background
-            cornerRadius={999}
-          />
-        </RadialBarChart>
-      </ChartContainer>
+      <RadialBarChart
+        width={size}
+        height={size}
+        data={[{ name: 'score', value: clamped }]}
+        innerRadius="80%"
+        outerRadius="97%"
+        startAngle={90}
+        endAngle={-270}
+      >
+        <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+        <RadialBar
+          dataKey="value"
+          fill={color}
+          background={{ fill: 'var(--muted)' }}
+          cornerRadius={999}
+        />
+      </RadialBarChart>
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <span
-          className="font-heading text-sm font-semibold tabular-nums"
+          className={cn(
+            'font-semibold tabular-nums',
+            isSmall ? 'text-[10px]' : 'text-sm'
+          )}
           style={{ color }}
         >
           {clamped}%
@@ -173,6 +184,7 @@ export default function RecruitmentPage() {
     applicationsApi.list()
   );
   const interviews = useApi('interviews.list', () => interviewsApi.list());
+  const posts = useApi('posts.list', () => postsApi.list());
 
   const avgScore = React.useMemo(() => {
     const list = applications.data ?? [];
@@ -198,8 +210,11 @@ export default function RecruitmentPage() {
         actions={
           tab === 'interviews' ? (
             <ScheduleInterviewDialog
-              applications={applications.data ?? []}
-              disabled={(applications.data?.length ?? 0) === 0}
+              posts={posts.data ?? []}
+              disabled={
+                (posts.data?.filter((p) => p.typePost === 'POSTE_TRAVAIL')
+                  .length ?? 0) === 0
+              }
             />
           ) : undefined
         }
@@ -245,7 +260,11 @@ export default function RecruitmentPage() {
             <TabsTrigger value="applications">
               {t.applicationsTab}
               <span className="bg-primary/10 text-primary ms-1.5 rounded-full px-1.5 text-[10px] font-semibold">
-                {applications.data?.length ?? 0}
+                {
+                  (posts.data ?? []).filter(
+                    (p) => p.typePost === 'POSTE_TRAVAIL'
+                  ).length
+                }
               </span>
             </TabsTrigger>
             <TabsTrigger value="interviews">
@@ -256,22 +275,18 @@ export default function RecruitmentPage() {
             </TabsTrigger>
           </TabsList>
         </Tabs>
-        {tab === 'interviews' && (
-          <ScheduleInterviewDialog
-            applications={applications.data ?? []}
-            disabled={(applications.data?.length ?? 0) === 0}
-            className="hidden sm:inline-flex"
-          />
-        )}
       </div>
 
       {tab === 'applications' ? (
-        <ApplicationsView applications={applications} />
+        <ApplicationsView
+          posts={posts.data ?? []}
+          applications={applications.data ?? []}
+        />
       ) : (
         <InterviewsView
           interviews={interviews}
           applicationMap={applicationMap}
-          applications={applications.data ?? []}
+          posts={posts.data ?? []}
         />
       )}
     </div>
@@ -279,41 +294,169 @@ export default function RecruitmentPage() {
 }
 
 function ApplicationsView({
+  posts,
   applications,
 }: {
-  applications: ReturnType<typeof useApi<ApplicationResponse[]>>;
+  posts: PostResponse[];
+  applications: ApplicationResponse[];
 }) {
   const { dict } = useI18n();
   const t = dict.recruitment;
-  const { data, loading, error, refetch } = applications;
+  const [expandedPostId, setExpandedPostId] = React.useState<
+    number | undefined
+  >(undefined);
+  const [selectedApp, setSelectedApp] = React.useState<
+    ApplicationResponse | undefined
+  >(undefined);
+  const [scheduleAppId, setScheduleAppId] = React.useState<number | undefined>(
+    undefined
+  );
+
+  const jobPosts = React.useMemo(
+    () => posts.filter((p) => p.typePost === 'POSTE_TRAVAIL'),
+    [posts]
+  );
+
+  const applicationsByPost = React.useMemo(() => {
+    const map = new Map<number, ApplicationResponse[]>();
+    for (const app of applications) {
+      const list = map.get(app.postId) ?? [];
+      list.push(app);
+      map.set(app.postId, list);
+    }
+    return map;
+  }, [applications]);
+
+  if (jobPosts.length === 0) {
+    return (
+      <EmptyState
+        icon={<Briefcase className="size-6" />}
+        title={t.noApplications}
+        description={t.noApplicationsDesc}
+      />
+    );
+  }
+
   return (
     <>
-      {error ? (
-        <ErrorState onRetry={refetch} description={error.message} />
-      ) : loading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }, (_, i) => {
-            return <Skeleton key={i} className="h-80 w-full" />;
-          })}
-        </div>
-      ) : (data ?? []).length === 0 ? (
-        <EmptyState
-          icon={<Briefcase className="size-6" />}
-          title={t.noApplications}
-          description={t.noApplicationsDesc}
+      <div className="grid gap-4">
+        {jobPosts.map((post) => {
+          const postApps = applicationsByPost.get(post.id) ?? [];
+          const isExpanded = expandedPostId === post.id;
+          return (
+            <Card
+              key={post.id}
+              className="overflow-hidden rounded-2xl shadow-sm"
+            >
+              <CardHeader className="gap-2 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] leading-snug font-semibold">
+                      {fullName(post.auteurName, post.auteurLastname)}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      {formatDateTime(post.dateCreation)}
+                    </p>
+                    <p className="text-foreground/80 mt-1 text-[15px] leading-snug">
+                      {post.contenu.length > 150
+                        ? post.contenu.slice(0, 150) + '…'
+                        : post.contenu}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 gap-1.5"
+                    onClick={() =>
+                      setExpandedPostId(isExpanded ? undefined : post.id)
+                    }
+                  >
+                    <Users className="size-3.5" />
+                    {postApps.length} {t.candidate.toLowerCase()}(s)
+                    {isExpanded ? (
+                      <ChevronUp className="size-3.5" />
+                    ) : (
+                      <ChevronDown className="size-3.5" />
+                    )}
+                  </Button>
+                </div>
+              </CardHeader>
+              {isExpanded && (
+                <CardContent className="border-t p-4">
+                  {postApps.length === 0 ? (
+                    <p className="text-muted-foreground py-4 text-center text-xs">
+                      {t.noApplicationsDesc}
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {postApps.map((app) => (
+                        <Button
+                          key={app.id}
+                          variant="ghost"
+                          className="bg-muted/40 hover:bg-muted/70 flex h-auto w-full cursor-pointer items-center justify-start gap-3 rounded-xl p-3 text-left"
+                          onClick={() => setSelectedApp(app)}
+                        >
+                          <Avatar className="size-8">
+                            <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
+                              {initials(
+                                app.candidateName.split(' ', 1)[0],
+                                app.candidateName.split(' ', 2)[1]
+                              )}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">
+                              {app.candidateName}
+                            </p>
+                            <p className="text-muted-foreground truncate text-xs">
+                              {app.candidateEmail}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <ScoreRing score={app.score} size={40} />
+                            <StatusBadge status={app.status} />
+                          </div>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+
+      {selectedApp && (
+        <ApplicationDetailDialog
+          app={selectedApp}
+          onClose={() => setSelectedApp(undefined)}
+          onSchedule={(appId) => {
+            setSelectedApp(undefined);
+            setScheduleAppId(appId);
+          }}
         />
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {(data ?? []).map((app) => {
-            return <ApplicationCard key={app.id} app={app} />;
-          })}
-        </div>
+      )}
+
+      {scheduleAppId && (
+        <ScheduleInterviewSimple
+          applicationId={scheduleAppId}
+          onClose={() => setScheduleAppId(undefined)}
+        />
       )}
     </>
   );
 }
 
-function ApplicationCard({ app }: { app: ApplicationResponse }) {
+function ApplicationDetailDialog({
+  app,
+  onClose,
+  onSchedule,
+}: {
+  app: ApplicationResponse;
+  onClose: () => void;
+  onSchedule?: (appId: number) => void;
+}) {
   const { dict } = useI18n();
   const t = dict.recruitment;
   const recommendationLabels: Record<string, string> = {
@@ -321,103 +464,280 @@ function ApplicationCard({ app }: { app: ApplicationResponse }) {
     ENTRETIEN: t.interview,
     REFUSER: t.refuse,
   };
+
   return (
-    <Card className="group flex flex-col overflow-hidden rounded-2xl shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-      <CardHeader className="bg-muted/25 border-b pb-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <Avatar className="from-primary/20 to-brand-2/20 ring-primary/15 size-11 rounded-xl bg-linear-to-br ring-1">
-              <AvatarFallback className="rounded-xl">
-                {initials(...app.candidateName.split(' '))}
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3">
+            <Avatar className="from-primary/20 to-brand-2/20 ring-primary/15 size-10 rounded-xl bg-linear-to-br ring-1">
+              <AvatarFallback className="rounded-xl text-sm">
+                {initials(
+                  app.candidateName.split(' ', 1)[0],
+                  app.candidateName.split(' ', 2)[1]
+                )}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <CardTitle className="truncate text-[15px]">
+              <Link
+                href={`/candidates/${app.userId}`}
+                className="truncate text-[15px] font-semibold hover:underline"
+                target="_blank"
+              >
                 {app.candidateName}
-              </CardTitle>
+              </Link>
               <p className="text-muted-foreground truncate text-xs">
                 {app.candidateEmail}
               </p>
             </div>
-          </div>
-          <StatusBadge status={app.status} />
-        </div>
-        <div className="mt-3 flex items-center gap-3">
-          <ScoreRing score={app.score} />
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <Stars value={app.stars} />
+          </DialogTitle>
+          <DialogDescription />
+        </DialogHeader>
+
+        <div className="space-y-4 py-1">
+          <div className="flex items-center gap-4">
+            <ScoreRing score={app.score} />
+            <div>
+              <div className="flex items-center gap-1.5">
+                <Stars value={app.stars} />
+              </div>
+              <p className="text-muted-foreground mt-1 flex items-center gap-1.5 text-xs">
+                <CalendarClock className="size-3.5" />
+                {formatDate(app.datePostulation)}
+              </p>
             </div>
-            <p className="text-muted-foreground mt-1 flex items-center gap-1.5 text-xs">
-              <CalendarClock className="size-3.5" />
-              {formatDate(app.datePostulation)}
-            </p>
+            <div className="ms-auto">
+              <StatusBadge status={app.status} />
+            </div>
           </div>
+
+          {parseList(app.strengths).length > 0 && (
+            <div className="border-chart-2/20 bg-chart-2/5 rounded-xl border p-3">
+              <p className="text-chart-2 mb-1 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase">
+                <CircleCheck className="size-3.5" /> {t.strengths}
+              </p>
+              <ul className="text-muted-foreground list-disc space-y-0.5 pl-4 text-xs leading-relaxed">
+                {parseList(app.strengths).map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {parseList(app.weaknesses).length > 0 && (
+            <div className="border-chart-3/20 bg-chart-3/5 rounded-xl border p-3">
+              <p className="text-chart-3 mb-1 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase">
+                <CircleX className="size-3.5" /> {t.weaknesses}
+              </p>
+              <ul className="text-muted-foreground list-disc space-y-0.5 pl-4 text-xs leading-relaxed">
+                {parseList(app.weaknesses).map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {app.feedback && (
+            <div className="bg-primary/5 ring-primary/10 rounded-xl p-3 ring-1 ring-inset">
+              <p className="text-primary mb-1 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase">
+                <Sparkles className="size-3.5" /> {t.aiAnalysis}
+              </p>
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                {app.feedback}
+              </p>
+            </div>
+          )}
+
+          {app.recommendation && (
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-muted-foreground text-xs">
+                {t.recommendation}
+              </span>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset',
+                  recommendationTone[app.recommendation] ??
+                    'bg-muted text-muted-foreground'
+                )}
+              >
+                {recommendationLabels[app.recommendation] ?? app.recommendation}
+              </span>
+            </div>
+          )}
+
+          {(app.status === 'PENDING' || app.status === 'HR_INTERVIEW') && (
+            <div className="pt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onSchedule?.(app.id)}
+              >
+                <CalendarClock className="size-3.5" /> {t.scheduleInterview}
+              </Button>
+            </div>
+          )}
         </div>
-      </CardHeader>
-      <CardContent className="flex-1 space-y-3 p-4 text-sm">
-        {app.strengths && (
-          <div className="border-chart-2/20 bg-chart-2/5 rounded-xl border p-3">
-            <p className="text-chart-2 mb-1 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase">
-              <CircleCheck className="size-3.5" /> {t.strengths}
-            </p>
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              {app.strengths}
-            </p>
-          </div>
-        )}
-        {app.weaknesses && (
-          <div className="border-chart-3/20 bg-chart-3/5 rounded-xl border p-3">
-            <p className="text-chart-3 mb-1 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase">
-              <CircleX className="size-3.5" /> {t.weaknesses}
-            </p>
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              {app.weaknesses}
-            </p>
-          </div>
-        )}
-        {app.feedback && (
-          <div className="bg-primary/5 ring-primary/10 rounded-xl p-3 ring-1 ring-inset">
-            <p className="text-primary mb-1 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide uppercase">
-              <Sparkles className="size-3.5" /> {t.aiAnalysis}
-            </p>
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              {app.feedback}
-            </p>
-          </div>
-        )}
-        {app.recommendation && (
-          <div className="mt-auto flex items-center gap-2 pt-1">
-            <span className="text-muted-foreground text-xs">
-              {t.recommendation}
-            </span>
-            <span
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset',
-                recommendationTone[app.recommendation] ??
-                  'bg-muted text-muted-foreground'
-              )}
-            >
-              {app.recommendation
-                ? (recommendationLabels[app.recommendation] ??
-                  app.recommendation)
-                : '—'}
-            </span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ScheduleInterviewSimple({
+  applicationId,
+  onClose,
+}: {
+  applicationId: number;
+  onClose: () => void;
+}) {
+  const { dict } = useI18n();
+  const t = dict.recruitment;
+  const form = useForm<InterviewFormValues>({
+    resolver: zodResolver(createInterviewSchema(dict.validation)),
+    defaultValues: {
+      applicationId,
+      interviewDate: '',
+      type: 'ONLINE',
+      location: '',
+    },
+  });
+  const watchType = useWatch({ control: form.control, name: 'type' });
+
+  const createMutation = useApiMutation<InterviewFormValues, InterviewResponse>(
+    (body) => {
+      const payload: InterviewRequest = {
+        applicationId: body.applicationId,
+        interviewDate: body.interviewDate,
+        type: body.type,
+        ...(body.type === 'ONSITE' && { location: body.location }),
+      };
+      return interviewsApi.create(payload);
+    },
+    {
+      invalidate: ['interviews.list', 'dashboard.get'],
+      onSuccess: () => {
+        toast.success(t.successScheduled);
+        onClose();
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+
+  return (
+    <Dialog
+      open
+      onOpenChange={(o) => {
+        if (!o) onClose();
+      }}
+    >
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{t.scheduleDialogTitle}</DialogTitle>
+          <DialogDescription>{t.scheduleDialogDesc}</DialogDescription>
+        </DialogHeader>
+        <form
+          onSubmit={form.handleSubmit((values) =>
+            createMutation.mutate(values)
+          )}
+          className="grid gap-4 py-1"
+        >
+          <FieldGroup>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Controller
+                control={form.control}
+                name="type"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>{t.typeLabel}</FieldLabel>
+                    <Select
+                      name={field.name}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger aria-invalid={fieldState.invalid}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ONLINE">{t.online}</SelectItem>
+                        <SelectItem value="ONSITE">{t.onsite}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                control={form.control}
+                name="interviewDate"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>{t.dateLabel}</FieldLabel>
+                    <DateTimePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            </div>
+
+            {watchType === 'ONSITE' && (
+              <Controller
+                control={form.control}
+                name="location"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>{t.locationLabel}</FieldLabel>
+                    <Input
+                      {...field}
+                      placeholder={t.locationPlaceholder}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            )}
+
+            {watchType === 'ONLINE' && (
+              <p className="bg-muted/60 text-muted-foreground flex items-center gap-2 rounded-lg px-3 py-2 text-xs">
+                <Video className="size-3.5" />
+                {t.autoMeetingLink}
+              </p>
+            )}
+          </FieldGroup>
+
+          <DialogFooter className="pt-2">
+            <Button type="submit" disabled={createMutation.isPending}>
+              {createMutation.isPending ? t.scheduling : t.schedule}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 function InterviewsView({
   interviews,
   applicationMap,
-  applications,
+  posts,
 }: {
   interviews: ReturnType<typeof useApi<InterviewResponse[]>>;
   applicationMap: Map<number, ApplicationResponse>;
-  applications: ApplicationResponse[];
+  posts: PostResponse[];
 }) {
   const { dict } = useI18n();
   const t = dict.recruitment;
@@ -440,8 +760,11 @@ function InterviewsView({
           description={t.noInterviewsDesc}
           action={
             <ScheduleInterviewDialog
-              applications={applications}
-              disabled={applications.length === 0}
+              posts={posts}
+              disabled={
+                (posts.filter((p) => p.typePost === 'POSTE_TRAVAIL').length ??
+                  0) === 0
+              }
             />
           }
         />
@@ -503,7 +826,7 @@ function InterviewsView({
                         <TableCell>
                           <StatusBadge status={interview.type} />
                         </TableCell>
-                        <TableCell className="text-muted-foreground max-w-[220px] truncate">
+                        <TableCell className="text-muted-foreground max-w-55 truncate">
                           {interview.type === 'ONLINE' &&
                           interview.meetingLink ? (
                             <a
@@ -605,17 +928,54 @@ function InterviewDeleteButton({
 }
 
 function ScheduleInterviewDialog({
-  applications,
+  posts,
   disabled,
   className,
 }: {
-  applications: ApplicationResponse[];
+  posts: PostResponse[];
   disabled: boolean;
   className?: string;
 }) {
   const { dict } = useI18n();
   const t = dict.recruitment;
   const [open, setOpen] = React.useState(false);
+
+  const jobPosts = React.useMemo(
+    () => posts.filter((p) => p.typePost === 'POSTE_TRAVAIL'),
+    [posts]
+  );
+
+  const [step, setStep] = React.useState<'post' | 'applicant' | 'schedule'>(
+    'post'
+  );
+  const [selectedPost, setSelectedPost] = React.useState<
+    PostResponse | undefined
+  >(undefined);
+  const [selectedApp, setSelectedApp] = React.useState<
+    ApplicationResponse | undefined
+  >(undefined);
+
+  const applicants = useApi(
+    ['applications.post', String(selectedPost?.id ?? '')],
+    () =>
+      selectedPost
+        ? applicationsApi.getByPostId(selectedPost.id)
+        : Promise.resolve([]),
+    { enabled: !!selectedPost }
+  );
+
+  const eligibleApplicants = React.useMemo(() => {
+    return (applicants.data ?? []).filter(
+      (a) => a.status === 'PENDING' || a.status === 'HR_INTERVIEW'
+    );
+  }, [applicants.data]);
+
+  const reset = () => {
+    setStep('post');
+    setSelectedPost(undefined);
+    setSelectedApp(undefined);
+  };
+
   const form = useForm<InterviewFormValues>({
     resolver: zodResolver(createInterviewSchema(dict.validation)),
     defaultValues: {
@@ -625,6 +985,7 @@ function ScheduleInterviewDialog({
       location: '',
     },
   });
+
   const watchType = useWatch({ control: form.control, name: 'type' });
 
   const createMutation = useApiMutation<InterviewFormValues, InterviewResponse>(
@@ -642,10 +1003,60 @@ function ScheduleInterviewDialog({
       onSuccess: () => {
         toast.success(t.successScheduled);
         setOpen(false);
+        reset();
         form.reset();
       },
       onError: (err) => toast.error(err.message),
     }
+  );
+
+  const stepIndicator = (
+    <div className="flex items-center gap-2 text-xs">
+      <span
+        className={cn(
+          'flex size-6 items-center justify-center rounded-full font-semibold',
+          step === 'post'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground'
+        )}
+      >
+        1
+      </span>
+      <span
+        className={cn(
+          'h-px w-4',
+          step === 'applicant' || step === 'schedule'
+            ? 'bg-primary'
+            : 'bg-muted'
+        )}
+      />
+      <span
+        className={cn(
+          'flex size-6 items-center justify-center rounded-full font-semibold',
+          step === 'applicant' || step === 'schedule'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground'
+        )}
+      >
+        2
+      </span>
+      <span
+        className={cn(
+          'h-px w-4',
+          step === 'schedule' ? 'bg-primary' : 'bg-muted'
+        )}
+      />
+      <span
+        className={cn(
+          'flex size-6 items-center justify-center rounded-full font-semibold',
+          step === 'schedule'
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground'
+        )}
+      >
+        3
+      </span>
+    </div>
   );
 
   return (
@@ -653,7 +1064,7 @@ function ScheduleInterviewDialog({
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
-        if (!o) form.reset();
+        if (!o) reset();
       }}
     >
       <DialogTrigger
@@ -664,139 +1075,237 @@ function ScheduleInterviewDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t.scheduleDialogTitle}</DialogTitle>
-          <DialogDescription>{t.scheduleDialogDesc}</DialogDescription>
+          <DialogDescription>
+            {step === 'post' && t.step1Desc}
+            {step === 'applicant' && t.step2Desc}
+            {step === 'schedule' && t.step3Desc}
+          </DialogDescription>
         </DialogHeader>
-        <form
-          onSubmit={form.handleSubmit((values) =>
-            createMutation.mutate(values)
-          )}
-          className="grid gap-4 py-1"
-        >
-          <FieldGroup>
-            <Controller
-              control={form.control}
-              name="applicationId"
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="interview-application">
-                    {t.candidate}
-                  </FieldLabel>
-                  <Select
-                    name={field.name}
-                    value={String(field.value || '')}
-                    onValueChange={(v) => field.onChange(Number(v))}
-                  >
-                    <SelectTrigger
-                      id="interview-application"
-                      aria-invalid={fieldState.invalid}
-                    >
-                      <SelectValue placeholder={t.selectCandidate} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {applications.map((a) => (
-                        <SelectItem key={a.id} value={String(a.id)}>
-                          {`${a.candidateName} (${a.score}%)`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
+        <div className="flex justify-center py-1">{stepIndicator}</div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Controller
-                control={form.control}
-                name="type"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="interview-type">
-                      {t.typeLabel}
-                    </FieldLabel>
-                    <Select
-                      name={field.name}
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger
-                        id="interview-type"
-                        aria-invalid={fieldState.invalid}
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ONLINE">{t.online}</SelectItem>
-                        <SelectItem value="ONSITE">{t.onsite}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-              <Controller
-                control={form.control}
-                name="interviewDate"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="interview-date">
-                      {t.dateLabel}
-                    </FieldLabel>
-                    <DateTimePicker
-                      id="interview-date"
-                      value={field.value}
-                      onChange={field.onChange}
-                      aria-invalid={fieldState.invalid}
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
+        {step === 'post' && (
+          <div className="grid max-h-80 gap-2 overflow-y-auto py-2">
+            {jobPosts.length === 0 ? (
+              <p className="text-muted-foreground py-8 text-center text-sm">
+                {t.noJobPostings}
+              </p>
+            ) : (
+              jobPosts.map((post) => (
+                <Button
+                  key={post.id}
+                  variant="ghost"
+                  className="h-auto justify-start gap-3 rounded-xl p-3 text-left"
+                  onClick={() => {
+                    setSelectedPost(post);
+                    setStep('applicant');
+                  }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {post.contenu.length > 100
+                        ? post.contenu.slice(0, 100) + '…'
+                        : post.contenu}
+                    </p>
+                    <p className="text-muted-foreground mt-0.5 text-xs">
+                      {fullName(post.auteurName, post.auteurLastname)} ·{' '}
+                      {formatDateTime(post.dateCreation)}
+                    </p>
+                  </div>
+                  <ChevronRight className="text-muted-foreground size-4 shrink-0" />
+                </Button>
+              ))
+            )}
+          </div>
+        )}
+
+        {step === 'applicant' && (
+          <div className="grid max-h-80 gap-2 overflow-y-auto py-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground mb-1 w-fit gap-1.5"
+              onClick={() => setStep('post')}
+            >
+              <ChevronLeft className="size-3.5" /> {t.back}
+            </Button>
+            {applicants.loading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : eligibleApplicants.length === 0 ? (
+              <p className="text-muted-foreground py-8 text-center text-sm">
+                {t.noApplicantsForPost}
+              </p>
+            ) : (
+              eligibleApplicants.map((app) => (
+                <Button
+                  key={app.id}
+                  variant="ghost"
+                  className="h-auto justify-start gap-3 rounded-xl p-3 text-left"
+                  onClick={() => {
+                    setSelectedApp(app);
+                    form.setValue('applicationId', app.id);
+                    setStep('schedule');
+                  }}
+                >
+                  <Avatar className="size-8">
+                    <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
+                      {initials(
+                        app.candidateName.split(' ', 1)[0],
+                        app.candidateName.split(' ', 2)[1]
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">
+                      {app.candidateName}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Stars value={app.stars} />
+                      <span className="text-muted-foreground text-xs">
+                        {app.score}%
+                      </span>
+                    </div>
+                  </div>
+                  <StatusBadge status={app.status} />
+                  <ChevronRight className="text-muted-foreground size-4 shrink-0" />
+                </Button>
+              ))
+            )}
+          </div>
+        )}
+
+        {step === 'schedule' && selectedApp && (
+          <form
+            onSubmit={form.handleSubmit((values) =>
+              createMutation.mutate(values)
+            )}
+            className="grid gap-4 py-1"
+          >
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground w-fit gap-1.5"
+              onClick={() => setStep('applicant')}
+            >
+              <ChevronLeft className="size-3.5" /> {t.back}
+            </Button>
+
+            <div className="bg-muted/40 flex items-center gap-3 rounded-xl p-3">
+              <Avatar className="size-8">
+                <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-semibold">
+                  {initials(
+                    selectedApp.candidateName.split(' ', 1)[0],
+                    selectedApp.candidateName.split(' ', 2)[1]
+                  )}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">
+                  {selectedApp.candidateName}
+                </p>
+                <p className="text-muted-foreground truncate text-xs">
+                  {selectedApp.candidateEmail}
+                </p>
+              </div>
+              <StatusBadge status={selectedApp.status} />
             </div>
 
-            {watchType === 'ONSITE' && (
-              <Controller
-                control={form.control}
-                name="location"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="interview-location">
-                      {t.locationLabel}
-                    </FieldLabel>
-                    <Input
-                      {...field}
-                      id="interview-location"
-                      placeholder={t.locationPlaceholder}
-                      aria-invalid={fieldState.invalid}
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-            )}
+            <FieldGroup>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Controller
+                  control={form.control}
+                  name="type"
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="interview-type">
+                        {t.typeLabel}
+                      </FieldLabel>
+                      <Select
+                        name={field.name}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger
+                          id="interview-type"
+                          aria-invalid={fieldState.invalid}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ONLINE">{t.online}</SelectItem>
+                          <SelectItem value="ONSITE">{t.onsite}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+                <Controller
+                  control={form.control}
+                  name="interviewDate"
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="interview-date">
+                        {t.dateLabel}
+                      </FieldLabel>
+                      <DateTimePicker
+                        id="interview-date"
+                        value={field.value}
+                        onChange={field.onChange}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              </div>
 
-            {watchType === 'ONLINE' && (
-              <p className="bg-muted/60 text-muted-foreground flex items-center gap-2 rounded-lg px-3 py-2 text-xs">
-                <Video className="size-3.5" />
-                {t.autoMeetingLink}
-              </p>
-            )}
-          </FieldGroup>
+              {watchType === 'ONSITE' && (
+                <Controller
+                  control={form.control}
+                  name="location"
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="interview-location">
+                        {t.locationLabel}
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="interview-location"
+                        placeholder={t.locationPlaceholder}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              )}
 
-          <DialogFooter className="pt-2">
-            <Button type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending ? t.scheduling : t.schedule}
-            </Button>
-          </DialogFooter>
-        </form>
+              {watchType === 'ONLINE' && (
+                <p className="bg-muted/60 text-muted-foreground flex items-center gap-2 rounded-lg px-3 py-2 text-xs">
+                  <Video className="size-3.5" />
+                  {t.autoMeetingLink}
+                </p>
+              )}
+            </FieldGroup>
+
+            <DialogFooter className="pt-2">
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending ? t.scheduling : t.schedule}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

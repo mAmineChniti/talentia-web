@@ -20,7 +20,7 @@ export function ErrorState({
 
   return (
     <div className="border-destructive/20 bg-destructive/5 relative overflow-hidden rounded-2xl border p-10 text-center">
-      <div className="from-destructive/10 pointer-events-none absolute -end-16 -top-16 size-48 rounded-full bg-linear-to-br to-transparent blur-2xl" />
+      <div className="from-destructive/10 pointer-events-none absolute -inset-e-16 -top-16 size-48 rounded-full bg-linear-to-br to-transparent blur-2xl" />
       <div className="relative flex flex-col items-center gap-3">
         <div className="bg-destructive/10 text-destructive ring-destructive/20 flex size-14 items-center justify-center rounded-2xl shadow-sm ring-1">
           <AlertCircle className="size-6" />
@@ -49,7 +49,7 @@ export function BackendOffline() {
 
   return (
     <div className="border-warning/25 bg-warning/5 relative overflow-hidden rounded-2xl border p-10 text-center">
-      <div className="from-warning/15 pointer-events-none absolute -end-16 -top-16 size-48 rounded-full bg-linear-to-br to-transparent blur-2xl" />
+      <div className="from-warning/15 pointer-events-none absolute -inset-e-16 -top-16 size-48 rounded-full bg-linear-to-br to-transparent blur-2xl" />
       <div className="relative flex flex-col items-center gap-3">
         <div className="bg-warning/10 text-warning ring-warning/25 flex size-14 items-center justify-center rounded-2xl shadow-sm ring-1">
           <Database className="size-6" />
@@ -83,7 +83,7 @@ export function EmptyState({
   return (
     <div className="bg-card/60 relative overflow-hidden rounded-2xl border border-dashed p-10 text-center">
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.35]"
+        className="pointer-events-none absolute inset-0 opacity-35"
         style={{
           backgroundImage:
             'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',

@@ -68,7 +68,7 @@ export function StatCard({
     >
       <div
         className={cn(
-          'from-primary/5 pointer-events-none absolute -end-10 -top-10 size-32 rounded-full bg-linear-to-br to-transparent opacity-70 blur-2xl'
+          'from-primary/5 pointer-events-none absolute -inset-e-10 -top-10 size-32 rounded-full bg-linear-to-br to-transparent opacity-70 blur-2xl'
         )}
       />
       <div className="relative flex items-start justify-between gap-3">

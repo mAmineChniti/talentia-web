@@ -10,7 +10,7 @@ export function AppFooter() {
   const now = new Date();
 
   return (
-    <footer className="border-t px-4 py-4 sm:px-6">
+    <footer className="border-t p-4 sm:px-6">
       <div className="text-muted-foreground flex flex-col items-center justify-between gap-3 text-xs sm:flex-row">
         <div className="flex items-center gap-2.5">
           <div className="from-primary to-brand-2 flex size-5 items-center justify-center rounded-md bg-linear-to-br">

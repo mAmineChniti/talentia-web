@@ -222,6 +222,12 @@
       "primaryCta": "ابدأ مجانًا",
       "secondaryCta": "تحدث إلى المبيعات"
     },
+    "community": {
+      "title": "انضم إلى مجتمعنا",
+      "subtitle": "تواصل مع محترفي الموارد البشرية الآخرين، اطرح أسئلتك وشارك أفكارك في المنتدى.",
+      "forumCta": "زيارة المنتدى",
+      "tagline": "نقاشات ودعم"
+    },
     "footer": {
       "rights": "جميع الحقوق محفوظة.",
       "privacy": "الخصوصية",
@@ -237,7 +243,8 @@
       "pricing": "الأسعار",
       "login": "تسجيل الدخول",
       "register": "ابدأ الآن",
-      "dashboard": "لوحة التحكم"
+      "dashboard": "لوحة التحكم",
+      "forum": "المنتدى"
     }
   },
   "login": {
@@ -376,7 +383,14 @@
     },
     "photo": "الصورة الشخصية",
     "photoHint": "PNG أو JPG أو GIF — 2 ميجابايت كحد أقصى",
-    "changePhoto": "انقر لتغيير صورتك الشخصية"
+    "changePhoto": "انقر لتغيير صورتك الشخصية",
+    "candidateProfile": {
+      "about": "نبذة عني",
+      "professionalInfo": "المعلومات المهنية",
+      "links": "الروابط",
+      "applications": "الطلبات",
+      "cv": "السيرة الذاتية"
+    }
   },
   "states": {
     "errorTitle": "تعذر تحميل البيانات",
@@ -764,8 +778,18 @@
     "refuse": "رفض",
     "scheduleInterview": "جدولة مقابلة",
     "scheduleDialogTitle": "جدولة مقابلة",
-    "scheduleDialogDesc": "اختر المتقدم وتفاصيل المقابلة.",
+    "scheduleDialogDesc": "اختر فرصة العمل، ثم المتقدم، ثم حدد تفاصيل المقابلة.",
     "selectCandidate": "اختر طلبًا…",
+    "step1Title": "1. اختر فرصة العمل",
+    "step2Title": "2. اختر المتقدم",
+    "step3Title": "3. تفاصيل المقابلة",
+    "step1Desc": "اختر فرصة العمل لجدولة المقابلة لها.",
+    "step2Desc": "اختر المتقدم لإجراء المقابلة معه.",
+    "step3Desc": "حدد التاريخ والوقت ونوع المقابلة.",
+    "back": "رجوع",
+    "noApplicantsForPost": "لا يوجد متقدمون لهذه الفرصة.",
+    "eligible": "مؤهل",
+    "notEligible": "غير مؤهل",
     "typeLabel": "النوع",
     "online": "عبر الإنترنت",
     "onsite": "في الموقع",
@@ -783,7 +807,12 @@
     "deleteInterviewDesc": "سيتم حذف هذه المقابلة نهائيًا.",
     "cancel": "إلغاء",
     "successDeleted": "تم حذف المقابلة",
-    "delete": "حذف"
+    "delete": "حذف",
+    "jobPostings": "فرص العمل",
+    "jobPostingsTab": "فرص العمل",
+    "noJobPostings": "لا توجد فرص عمل",
+    "noJobPostingsDesc": "ستظهر فرص العمل هنا بمجرد إنشائها.",
+    "motivationLetter": "خطاب التحفيز"
   },
   "trainings": {
     "title": "التدريبات",
@@ -872,7 +901,19 @@
     "submittingApply": "جارٍ الإرسال…",
     "successApplied": "تم إرسال الطلب",
     "alreadyApplied": "لقد تقدمت بالفعل لهذه الوظيفة.",
-    "appliedState": "تم التقديم"
+    "appliedState": "تم التقديم",
+    "filterAll": "الكل",
+    "filterJobOpenings": "فرص العمل",
+    "filterAnnouncements": "الإعلانات",
+    "filterTrainings": "التدريب",
+    "applicants": "المتقدمون",
+    "applicantsCount": "{count} متقدم(ون)",
+    "noApplicants": "لا يوجد متقدمون بعد",
+    "noApplicantsDesc": "ستظهر الطلبات هنا بمجرد تقدم المرشحين.",
+    "viewApplicants": "عرض المتقدمين",
+    "hideApplicants": "إخفاء المتقدمين",
+    "score": "النتيجة",
+    "appliedOn": "تقدم في"
   },
   "forgotPassword": {
     "title": "نسيت كلمة المرور",

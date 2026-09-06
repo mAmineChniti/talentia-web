@@ -27,6 +27,7 @@ export function SiteFooter() {
         { name: landing.nav.login, href: `/${lang}/login`, link: true },
         { name: landing.nav.register, href: `/${lang}/register`, link: true },
         { name: landing.nav.dashboard, href: `/${lang}/dashboard`, link: true },
+        { name: landing.nav.forum, href: `/${lang}/forum`, link: true },
       ],
     },
     {

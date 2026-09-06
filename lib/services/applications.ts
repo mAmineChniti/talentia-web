@@ -8,6 +8,8 @@ import { request } from './http';
 export const applicationsApi = {
   list: () => request<ApplicationResponse[]>('/applications'),
   get: (id: number) => request<ApplicationResponse>(`/applications/${id}`),
+  getByPostId: (postId: number) =>
+    request<ApplicationResponse[]>(`/applications/post/${postId}`),
   apply: (data: {
     cv: File;
     motivationLetter: string;

@@ -1,6 +1,7 @@
 import pluginQuery from '@tanstack/eslint-plugin-query';
 import unicornPlugin from 'eslint-plugin-unicorn';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import eslintPluginTailwindcss from 'eslint-plugin-tailwindcss';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import parser from '@typescript-eslint/parser';
 import nextVitals from 'eslint-config-next/core-web-vitals';
@@ -10,6 +11,7 @@ import reactCompiler from 'eslint-plugin-react-compiler';
 import eslintPluginZod from 'eslint-plugin-zod';
 
 const eslintConfig = defineConfig(eslintPluginZod.configs.recommended, [
+  eslintPluginTailwindcss.configs.recommended,
   unicornPlugin.configs.all,
   ...nextVitals,
   ...nextTs,
@@ -53,10 +55,14 @@ const eslintConfig = defineConfig(eslintPluginZod.configs.recommended, [
       'unicorn/prefer-temporal': 'off',
       'unicorn/no-non-function-verb-prefix': 'off',
       'unicorn/consistent-arrow-return-style': 'off',
+      'tailwindcss/classnames-order': 'off',
     },
     settings: {
       react: {
         version: '19',
+      },
+      tailwindcss: {
+        cssConfigPath: './app/globals.css',
       },
     },
   },

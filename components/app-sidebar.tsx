@@ -114,7 +114,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2.5 px-2 py-2">
+        <div className="flex items-center gap-2.5 p-2">
           <div className="from-primary to-brand-2 shadow-primary/30 relative flex size-9 shrink-0 items-center justify-center rounded-xl bg-linear-to-br shadow-lg">
             <div className="bg-primary-foreground/30 absolute -top-2 -right-2 size-6 rounded-full blur-md" />
             <Sparkles className="text-primary-foreground size-4.5" />
@@ -175,7 +175,7 @@ export function AppSidebar() {
                           />
                           <span>{title}</span>
                           {isActive && (
-                            <span className="from-primary to-brand-2 ms-auto h-1.5 w-1.5 shrink-0 rounded-full bg-linear-to-br" />
+                            <span className="from-primary to-brand-2 ms-auto size-1.5 shrink-0 rounded-full bg-linear-to-br" />
                           )}
                         </SidebarMenuButton>
                       </SidebarMenuItem>

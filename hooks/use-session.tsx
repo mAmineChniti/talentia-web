@@ -69,14 +69,16 @@ export function SessionProvider({
   );
 }
 
-export function useSession() {
+export function useSession(options?: { redirectToLoginOnMissing?: boolean }) {
   const ctx = React.useContext(SessionContext);
   const router = useRouter();
   const pathname = usePathname();
+  const shouldRedirectToLogin = options?.redirectToLoginOnMissing ?? true;
   React.useEffect(() => {
-    if (ctx.loading || ctx.userId !== undefined) return;
+    if (!shouldRedirectToLogin || ctx.loading || ctx.userId !== undefined)
+      return;
     const locale = pathname.split('/').find(Boolean);
     router.replace(locale ? `/${locale}/login` : '/login');
-  }, [ctx.loading, ctx.userId, pathname, router]);
+  }, [ctx.loading, ctx.userId, pathname, shouldRedirectToLogin, router]);
   return ctx;
 }

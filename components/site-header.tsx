@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ModeToggle } from '@/components/mode-toggle';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { useI18n } from '@/components/i18n-provider';
+import { cn } from '@/lib/utils';
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -16,6 +17,8 @@ export function SiteHeader() {
 
   const isAuthPage =
     pathname?.endsWith('/login') || pathname?.endsWith('/register');
+  const isLanding = pathname === `/${lang}`;
+  const isForum = pathname === `/${lang}/forum`;
 
   return (
     <header className="bg-background/80 sticky top-0 z-50 border-b backdrop-blur-md">
@@ -29,29 +32,42 @@ export function SiteHeader() {
 
         {!isAuthPage && (
           <nav className="text-muted-foreground hidden items-center gap-8 text-sm font-medium md:flex">
+            {isLanding && (
+              <>
+                <Link
+                  href="#features"
+                  className="hover:text-foreground transition-colors"
+                >
+                  {dict.landing.nav.features}
+                </Link>
+                <Link
+                  href="#modules"
+                  className="hover:text-foreground transition-colors"
+                >
+                  {dict.landing.nav.modules}
+                </Link>
+                <Link
+                  href="#testimonials"
+                  className="hover:text-foreground transition-colors"
+                >
+                  {dict.landing.nav.testimonials}
+                </Link>
+                <Link
+                  href="#pricing"
+                  className="hover:text-foreground transition-colors"
+                >
+                  {dict.landing.nav.pricing}
+                </Link>
+              </>
+            )}
             <Link
-              href="#features"
-              className="hover:text-foreground transition-colors"
+              href={`/${lang}/forum`}
+              className={cn(
+                'transition-colors',
+                isForum ? 'text-primary font-semibold' : 'hover:text-foreground'
+              )}
             >
-              {dict.landing.nav.features}
-            </Link>
-            <Link
-              href="#modules"
-              className="hover:text-foreground transition-colors"
-            >
-              {dict.landing.nav.modules}
-            </Link>
-            <Link
-              href="#testimonials"
-              className="hover:text-foreground transition-colors"
-            >
-              {dict.landing.nav.testimonials}
-            </Link>
-            <Link
-              href="#pricing"
-              className="hover:text-foreground transition-colors"
-            >
-              {dict.landing.nav.pricing}
+              {dict.landing.nav.forum}
             </Link>
           </nav>
         )}
