@@ -332,7 +332,7 @@ function LeaveRow({ leave }: { leave: LeaveResponse }) {
           {leave.numberOfDays} {leave.numberOfDays > 1 ? t.days : t.day}
         </span>
       </TableCell>
-      <TableCell className="text-muted-foreground max-w-[200px] truncate text-sm">
+      <TableCell className="text-muted-foreground max-w-50 truncate text-sm">
         {leave.reason || '—'}
       </TableCell>
       <TableCell>

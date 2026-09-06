@@ -25,10 +25,10 @@ export function DataPanel({
       )}
     >
       {(title || actions) && (
-        <div className="flex flex-col gap-3 border-b px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <div className="min-w-0 space-y-0.5">
             {title && (
-              <div className="font-display text-sm font-semibold tracking-tight">
+              <div className="text-sm font-semibold tracking-tight">
                 {title}
               </div>
             )}

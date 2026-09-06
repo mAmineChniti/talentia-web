@@ -17,6 +17,7 @@ export interface PostResponse {
   auteurName: string;
   auteurLastname: string;
   nombreLikes: number;
+  likedByCurrentUser: boolean;
 }
 
 // entity/Commentaire.java

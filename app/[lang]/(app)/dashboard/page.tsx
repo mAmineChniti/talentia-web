@@ -441,15 +441,16 @@ export default function DashboardPage() {
       {/* Hero banner */}
       <div className="from-primary via-primary to-brand-2 text-primary-foreground shadow-primary/25 relative overflow-hidden rounded-3xl bg-linear-to-br shadow-xl">
         <div
-          className="absolute inset-0 opacity-[0.08]"
+          className="absolute inset-0"
           style={{
+            opacity: 0.15,
             backgroundImage:
               'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
             backgroundSize: '44px 44px',
           }}
         />
-        <div className="bg-primary-foreground/10 absolute -end-24 -top-24 size-72 rounded-full blur-3xl" />
-        <div className="bg-primary-foreground/10 absolute start-1/4 -bottom-32 size-72 rounded-full blur-3xl" />
+        <div className="bg-primary-foreground/10 absolute -inset-e-24 -top-24 size-72 rounded-full blur-3xl" />
+        <div className="bg-primary-foreground/10 absolute inset-s-1/4 -bottom-32 size-72 rounded-full blur-3xl" />
         <div className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-stretch">
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-5">
             <p className="text-primary-foreground/70 text-xs font-semibold tracking-widest uppercase">
@@ -544,7 +545,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="lg:w-[340px]">
+          <div className="lg:w-85">
             {canManage ? (
               <div className="bg-primary-foreground/10 ring-primary-foreground/20 h-full rounded-2xl p-4 ring-1 backdrop-blur-md">
                 <div className="flex items-center gap-2">
@@ -717,7 +718,7 @@ export default function DashboardPage() {
               {monthlyPayroll.length > 0 ? (
                 <ChartContainer
                   config={payrollConfig}
-                  className="aspect-[16/7] w-full"
+                  className="aspect-16/7 w-full"
                 >
                   <BarChart
                     accessibilityLayer
@@ -802,7 +803,7 @@ export default function DashboardPage() {
             <CardContent>
               <ChartContainer
                 config={leavesStatusConfig}
-                className="aspect-[4/3] w-full"
+                className="aspect-4/3 w-full"
               >
                 <BarChart
                   accessibilityLayer
@@ -889,7 +890,7 @@ export default function DashboardPage() {
               {leaveTypeRows.length > 0 ? (
                 <ChartContainer
                   config={leaveTypeConfig}
-                  className="aspect-[16/7] w-full"
+                  className="aspect-16/7 w-full"
                 >
                   <BarChart
                     accessibilityLayer
@@ -946,7 +947,7 @@ export default function DashboardPage() {
                   {byDept.length > 0 ? (
                     <ChartContainer
                       config={deptConfig}
-                      className="aspect-[16/7] w-full"
+                      className="aspect-16/7 w-full"
                     >
                       <BarChart
                         accessibilityLayer

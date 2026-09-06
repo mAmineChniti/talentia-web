@@ -155,6 +155,25 @@ export function formatToday(locale: Locale): string {
   return label;
 }
 
+function tryParseJsonArray(value: string): string[] | undefined {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return undefined;
+  }
+  if (parsed === undefined || !Array.isArray(parsed)) return undefined;
+  return (parsed as unknown[])
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+export function parseList(value?: string | null): string[] {
+  if (!value || !value.trim()) return [];
+  return tryParseJsonArray(value.trim()) ?? [value.trim()];
+}
+
 export function initials(name?: string, lastname?: string) {
   return (
     `${(name || '')[0] || ''}${(lastname || '')[0] || ''}`.toUpperCase() || '?'

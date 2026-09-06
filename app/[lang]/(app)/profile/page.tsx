@@ -120,8 +120,8 @@ export default function ProfilePage() {
       />
 
       <div className="from-primary via-primary/90 to-brand-2 shadow-primary/10 relative overflow-hidden rounded-2xl bg-linear-to-br shadow-lg">
-        <div className="pointer-events-none absolute -end-24 -top-24 size-72 rounded-full bg-white/10 blur-3xl" />
-        <div className="bg-brand-2/30 pointer-events-none absolute -start-16 -bottom-28 size-80 rounded-full blur-3xl" />
+        <div className="pointer-events-none absolute -inset-e-24 -top-24 size-72 rounded-full bg-white/10 blur-3xl" />
+        <div className="bg-brand-2/30 pointer-events-none absolute -inset-s-16 -bottom-28 size-80 rounded-full blur-3xl" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.12),transparent_45%)]" />
         <div className="relative flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-8">
           <div

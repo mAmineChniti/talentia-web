@@ -95,8 +95,9 @@ export default function LoginPage() {
         <div className="pointer-events-none fixed inset-0 -z-10">
           <div className="from-primary/25 via-chart-2/15 to-chart-4/10 absolute -top-24 left-1/2 h-120 w-205 -translate-x-1/2 rounded-full bg-linear-to-tr blur-3xl" />
           <div
-            className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
+            className="absolute inset-0 dark:opacity-10"
             style={{
+              opacity: 0.15,
               backgroundImage:
                 'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
               backgroundSize: '56px 56px',
@@ -107,8 +108,8 @@ export default function LoginPage() {
         <div className="mx-auto w-full max-w-5xl">
           <div className="bg-card shadow-primary/5 grid w-full overflow-hidden rounded-3xl border shadow-2xl md:grid-cols-[1.1fr_1fr]">
             <div className="from-primary via-primary to-brand-2 relative hidden flex-col justify-between overflow-hidden bg-linear-to-br p-8 text-white md:flex">
-              <div className="pointer-events-none absolute -end-24 -top-24 size-72 rounded-full bg-white/10 blur-3xl" />
-              <div className="bg-brand-2/40 pointer-events-none absolute -start-20 -bottom-32 size-80 rounded-full blur-3xl" />
+              <div className="pointer-events-none absolute -inset-e-24 -top-24 size-72 rounded-full bg-white/10 blur-3xl" />
+              <div className="bg-brand-2/40 pointer-events-none absolute -inset-s-20 -bottom-32 size-80 rounded-full blur-3xl" />
               <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.14),transparent_45%)]" />
 
               <div className="relative">

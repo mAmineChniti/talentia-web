@@ -57,8 +57,9 @@ export default function LandingPage() {
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="from-primary/25 via-chart-2/15 to-chart-4/10 absolute -top-24 left-1/2 h-120 w-205 -translate-x-1/2 rounded-full bg-linear-to-tr blur-3xl" />
           <div
-            className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
+            className="absolute inset-0 dark:opacity-10"
             style={{
+              opacity: 0.15,
               backgroundImage:
                 'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
               backgroundSize: '56px 56px',
@@ -222,6 +223,40 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Community */}
+      <section id="community" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+        <div className="bg-card relative overflow-hidden rounded-3xl border px-6 py-14 text-center sm:px-16">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="from-primary/20 to-brand-2/20 absolute -top-24 right-10 size-64 rounded-full bg-linear-to-br blur-3xl" />
+            <div className="from-primary/10 to-brand-2/10 absolute -bottom-24 left-10 size-64 rounded-full bg-linear-to-br blur-3xl" />
+          </div>
+          <div className="relative">
+            <Badge
+              variant="secondary"
+              className="mx-auto mb-6 gap-1.5 rounded-full px-3 py-1 text-xs"
+            >
+              <Users className="size-3" />
+              {landing.community.tagline}
+            </Badge>
+            <h2 className="font-heading mx-auto max-w-xl text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+              {landing.community.title}
+            </h2>
+            <p className="text-muted-foreground mx-auto mt-4 max-w-lg text-pretty">
+              {landing.community.subtitle}
+            </p>
+            <Button
+              render={<Link href={`/${lang}/forum`} />}
+              nativeButton={false}
+              size="lg"
+              className="mt-8"
+            >
+              {landing.community.forumCta}{' '}
+              <ArrowRight className="rtl:rotate-180" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section id="pricing" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
@@ -286,8 +321,8 @@ export default function LandingPage() {
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
         <div className="from-primary via-primary to-brand-2 text-primary-foreground shadow-primary/20 relative overflow-hidden rounded-3xl border bg-linear-to-tr px-6 py-16 text-center shadow-2xl sm:px-16">
           <div className="pointer-events-none absolute inset-0">
-            <div className="bg-primary-foreground/10 absolute -top-20 right-10 h-64 w-64 rounded-full blur-3xl" />
-            <div className="bg-primary-foreground/10 absolute -bottom-20 left-10 h-64 w-64 rounded-full blur-3xl" />
+            <div className="bg-primary-foreground/10 absolute -top-20 right-10 size-64 rounded-full blur-3xl" />
+            <div className="bg-primary-foreground/10 absolute -bottom-20 left-10 size-64 rounded-full blur-3xl" />
           </div>
           <div className="relative">
             <h2 className="font-heading mx-auto max-w-xl text-3xl font-bold tracking-tight text-balance sm:text-4xl">

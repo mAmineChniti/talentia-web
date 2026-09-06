@@ -1,23 +1,25 @@
 import type { Role } from '@/lib/types/users';
 
 const ROLE_HIERARCHY: Record<Role, number> = {
-  USER: 0,
-  HR: 1,
-  ADMIN: 2,
+  CANDIDATE: 0,
+  EMPLOYEE: 1,
+  HR: 2,
+  ADMIN: 3,
 };
 
 const ROUTE_ROLES: Record<string, Role[]> = {
-  dashboard: ['USER', 'HR', 'ADMIN'],
+  dashboard: ['EMPLOYEE', 'HR', 'ADMIN'],
   employees: ['HR', 'ADMIN'],
   attendance: ['HR', 'ADMIN'],
-  leaves: ['USER', 'HR', 'ADMIN'],
+  leaves: ['EMPLOYEE', 'HR', 'ADMIN'],
   contracts: ['HR', 'ADMIN'],
   payroll: ['ADMIN'],
   payslips: ['ADMIN'],
-  trainings: ['USER', 'HR', 'ADMIN'],
+  trainings: ['EMPLOYEE', 'HR', 'ADMIN'],
   recruitment: ['HR', 'ADMIN'],
-  forum: ['USER', 'HR', 'ADMIN'],
-  profile: ['USER', 'HR', 'ADMIN'],
+  candidates: ['HR', 'ADMIN'],
+  forum: ['CANDIDATE', 'EMPLOYEE', 'HR', 'ADMIN'],
+  profile: ['CANDIDATE', 'EMPLOYEE', 'HR', 'ADMIN'],
 };
 
 export function canAccessRoute(

@@ -11,6 +11,7 @@ export interface ApplicationRequest {
 
 export interface ApplicationResponse {
   id: number;
+  userId: number;
   candidateId: number;
   postId: number;
   candidateName: string;

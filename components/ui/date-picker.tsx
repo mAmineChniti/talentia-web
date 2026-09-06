@@ -8,12 +8,16 @@ import {
   enUS as enUSDayPicker,
   arSA as arSADayPicker,
 } from 'react-day-picker/locale';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock2Icon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Input } from '@/components/ui/input';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '@/components/ui/input-group';
 import {
   Popover,
   PopoverContent,
@@ -239,8 +243,7 @@ export function DateTimePicker({
     }
   };
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const timeValue = e.target.value;
+  const handleTimeChange = (timeValue: string) => {
     if (date && timeValue) {
       const [hours, minutes] = timeValue.split(':').map(Number);
       const newDate = new Date(date);
@@ -266,7 +269,7 @@ export function DateTimePicker({
   };
 
   return (
-    <div className={cn('flex gap-2', className)} dir={dir}>
+    <div className={className} dir={dir}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           render={
@@ -274,14 +277,14 @@ export function DateTimePicker({
               variant="outline"
               id={id}
               className={cn(
-                'flex-1 justify-start text-start font-normal',
+                'w-full justify-start text-start font-normal',
                 !date && 'text-muted-foreground'
               )}
               dir={dir}
             />
           }
         >
-          <CalendarIcon
+          <Clock2Icon
             className={cn(dir === 'rtl' ? 'ms-2' : 'me-2', 'size-4')}
           />
           {formatDateTimeDisplay(date)}
@@ -295,15 +298,26 @@ export function DateTimePicker({
             locale={dayPickerLocale}
             dir={dir}
           />
+          <div className="border-t p-3">
+            <InputGroup>
+              <InputGroupAddon align="inline-start">
+                <Clock2Icon className="text-muted-foreground" />
+              </InputGroupAddon>
+              <InputGroupInput
+                type="time"
+                step="1"
+                value={
+                  date
+                    ? `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+                    : ''
+                }
+                onChange={(e) => handleTimeChange(e.target.value)}
+                className="appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
+              />
+            </InputGroup>
+          </div>
         </PopoverContent>
       </Popover>
-      <Input
-        type="time"
-        step="1"
-        value={date ? date.toTimeString().slice(0, 8) : ''}
-        onChange={handleTimeChange}
-        className="w-32"
-      />
     </div>
   );
 }

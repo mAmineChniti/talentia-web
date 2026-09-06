@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'HR' | 'USER' | string;
+export type Role = 'CANDIDATE' | 'EMPLOYEE' | 'HR' | 'ADMIN';
 
 // entity/users.java
 export interface User {

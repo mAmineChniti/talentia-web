@@ -222,6 +222,12 @@
       "primaryCta": "Commencer gratuitement",
       "secondaryCta": "Parler aux ventes"
     },
+    "community": {
+      "title": "Rejoignez notre communauté",
+      "subtitle": "Échangez avec d'autres professionnels des RH, posez vos questions et partagez vos idées sur le forum.",
+      "forumCta": "Visiter le forum",
+      "tagline": "Discussions & entraide"
+    },
     "footer": {
       "rights": "Tous droits réservés.",
       "privacy": "Confidentialité",
@@ -237,7 +243,8 @@
       "pricing": "Tarifs",
       "login": "Se connecter",
       "register": "Commencer",
-      "dashboard": "Tableau de bord"
+      "dashboard": "Tableau de bord",
+      "forum": "Forum"
     }
   },
   "login": {
@@ -376,7 +383,14 @@
     },
     "photo": "Photo de profil",
     "photoHint": "PNG, JPG ou GIF — 2 Mo max",
-    "changePhoto": "Cliquez pour changer votre photo de profil"
+    "changePhoto": "Cliquez pour changer votre photo de profil",
+    "candidateProfile": {
+      "about": "À propos",
+      "professionalInfo": "Informations professionnelles",
+      "links": "Liens",
+      "applications": "Candidatures",
+      "cv": "CV"
+    }
   },
   "states": {
     "errorTitle": "Impossible de charger les données",
@@ -764,8 +778,18 @@
     "refuse": "Refuser",
     "scheduleInterview": "Planifier un entretien",
     "scheduleDialogTitle": "Planifier un entretien",
-    "scheduleDialogDesc": "Sélectionnez le candidat et les modalités de l'entretien.",
+    "scheduleDialogDesc": "Sélectionnez une offre d'emploi, puis un candidat, puis définissez les détails de l'entretien.",
     "selectCandidate": "Sélectionnez une candidature…",
+    "step1Title": "1. Sélectionnez une offre d'emploi",
+    "step2Title": "2. Sélectionnez un candidat",
+    "step3Title": "3. Détails de l'entretien",
+    "step1Desc": "Choisissez l'offre d'emploi pour planifier l'entretien.",
+    "step2Desc": "Choisissez le candidat à entretien.",
+    "step3Desc": "Définissez la date, l'heure et le type de l'entretien.",
+    "back": "Retour",
+    "noApplicantsForPost": "Aucun candidat pour cette offre.",
+    "eligible": "Éligible",
+    "notEligible": "Non éligible",
     "typeLabel": "Type",
     "online": "En ligne",
     "onsite": "Sur site",
@@ -783,7 +807,12 @@
     "deleteInterviewDesc": "Cet entretien sera supprimé définitivement.",
     "cancel": "Annuler",
     "successDeleted": "Entretien supprimé",
-    "delete": "Supprimer"
+    "delete": "Supprimer",
+    "jobPostings": "Offres d'emploi",
+    "jobPostingsTab": "Offres d'emploi",
+    "noJobPostings": "Aucune offre d'emploi",
+    "noJobPostingsDesc": "Les offres d'emploi apparaîtront ici une fois créées.",
+    "motivationLetter": "Lettre de motivation"
   },
   "trainings": {
     "title": "Formations",
@@ -872,7 +901,19 @@
     "submittingApply": "Envoi…",
     "successApplied": "Candidature envoyée",
     "alreadyApplied": "Vous avez déjà postulé à cette offre.",
-    "appliedState": "Postulé"
+    "appliedState": "Postulé",
+    "filterAll": "Tous",
+    "filterJobOpenings": "Offres d'emploi",
+    "filterAnnouncements": "Annonces",
+    "filterTrainings": "Formations",
+    "applicants": "Candidats",
+    "applicantsCount": "{count} candidat(s)",
+    "noApplicants": "Aucun candidat pour le moment",
+    "noApplicantsDesc": "Les candidatures apparaîtront ici une fois reçues.",
+    "viewApplicants": "Voir les candidats",
+    "hideApplicants": "Masquer les candidats",
+    "score": "Score",
+    "appliedOn": "Postulé le"
   },
   "forgotPassword": {
     "title": "Mot de passe oublié",

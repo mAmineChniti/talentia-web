@@ -194,7 +194,7 @@ export default function EmployeesPage() {
         <CardContent className="space-y-4 p-4 sm:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative w-full sm:max-w-xs">
-              <Search className="text-muted-foreground absolute start-3 top-1/2 size-4 -translate-y-1/2" />
+              <Search className="text-muted-foreground absolute inset-s-3 top-1/2 size-4 -translate-y-1/2" />
               <Input
                 placeholder={t.searchPlaceholder}
                 value={search}
