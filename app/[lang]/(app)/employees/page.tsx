@@ -540,6 +540,9 @@ function EnrollmentRow({
   const t = dict.employees;
   const isComplete = enrollment.status === 'COMPLETED';
   const [score, setScore] = React.useState('');
+  const scoreNum = Number(score);
+  const isScoreInvalid =
+    score !== '' && (Number.isNaN(scoreNum) || scoreNum < 0 || scoreNum > 20);
 
   const completeMutation = useApiMutation<
     { id: number; score: number },
@@ -581,20 +584,17 @@ function EnrollmentRow({
             onChange={(e) => setScore(e.target.value)}
             placeholder={t.scorePlaceholder}
             className="w-24"
+            aria-invalid={isScoreInvalid}
           />
           <Button
             size="sm"
             onClick={() =>
               completeMutation.mutate({
                 id: enrollment.id,
-                score: Number(score),
+                score: scoreNum,
               })
             }
-            disabled={
-              !score ||
-              Number.isNaN(Number(score)) ||
-              completeMutation.isPending
-            }
+            disabled={!score || isScoreInvalid || completeMutation.isPending}
           >
             {completeMutation.isPending ? t.completing : t.complete}
           </Button>

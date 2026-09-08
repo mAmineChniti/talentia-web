@@ -62,6 +62,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 
 type TrainingFormValues = z.infer<ReturnType<typeof createTrainingSchema>>;
@@ -104,7 +116,7 @@ export default function TrainingsPage() {
   return (
     <div className="grid gap-6">
       <PageHeader
-        kicker={t.completed}
+        kicker={t.moduleLabel}
         title={t.title}
         description={t.description
           .split('{count}')
@@ -289,18 +301,60 @@ function TrainingCard({
           disabled={isFull || isDone}
         />
         {canManage && (
+          <DeleteTrainingDialog
+            pending={removeMutation.isPending}
+            onConfirm={() => removeMutation.mutate(training.id)}
+          />
+        )}
+      </CardFooter>
+    </Card>
+  );
+}
+
+function DeleteTrainingDialog({
+  pending,
+  onConfirm,
+}: {
+  pending: boolean;
+  onConfirm: () => void;
+}) {
+  const { dict } = useI18n();
+  const t = dict.trainings;
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger
+        render={
           <Button
             variant="ghost"
             size="sm"
             className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 ms-auto"
-            onClick={() => removeMutation.mutate(training.id)}
-            disabled={removeMutation.isPending}
+          />
+        }
+      >
+        <Trash2 /> {t.delete}
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t.deleteDialogTitle}</AlertDialogTitle>
+          <AlertDialogDescription>{t.deleteDialogDesc}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              onConfirm();
+              setOpen(false);
+            }}
+            disabled={pending}
+            className="bg-destructive hover:bg-destructive/90 text-white"
           >
-            <Trash2 /> {t.delete}
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
+            {t.delete}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -365,15 +419,25 @@ function EnrollDialog({
                 <SelectValue placeholder={t.selectEmployee} />
               </SelectTrigger>
               <SelectContent>
-                {employeeOptions(employees, userMap).map((o) => (
-                  <SelectItem key={o.id} value={String(o.id)}>
-                    {o.name}
-                  </SelectItem>
-                ))}
+                {employeeOptions(employees, userMap)
+                  .filter((o) => o.active)
+                  .map((o) => (
+                    <SelectItem key={o.id} value={String(o.id)}>
+                      {o.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </Field>
           <DialogFooter className="pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={enrollMutation.isPending}
+            >
+              {t.cancel}
+            </Button>
             <Button
               onClick={() =>
                 enrollMutation.mutate({ trainingId: training.id, employeeId })
@@ -487,7 +551,7 @@ function AddTrainingDialog() {
                   <FieldLabel htmlFor="training-description">
                     {t.descriptionLabel}
                   </FieldLabel>
-                  <Input
+                  <Textarea
                     {...field}
                     id="training-description"
                     placeholder={t.descriptionPlaceholder}
@@ -591,6 +655,14 @@ function AddTrainingDialog() {
           </FieldGroup>
 
           <DialogFooter className="pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={createMutation.isPending}
+            >
+              {t.cancel}
+            </Button>
             <Button type="submit" disabled={createMutation.isPending}>
               {createMutation.isPending ? t.creating : t.createTraining}
             </Button>
@@ -612,6 +684,7 @@ function employeeOptions(
       return {
         id: e.id,
         name: fullName(user?.name, user?.lastname),
+        active: e.active,
       };
     })
     .toSorted((a, b) => a.name.localeCompare(b.name));

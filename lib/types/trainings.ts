@@ -10,6 +10,8 @@ export interface TrainingRequest {
   capacity: number;
 }
 
+export type TrainingStatus = 'PLANNED' | 'DONE' | 'CANCELLED';
+
 // entity/Training.java
 export interface Training {
   id: number;
@@ -20,9 +22,11 @@ export interface Training {
   startDate: string;
   endDate: string;
   capacity: number;
-  status: string;
+  status: TrainingStatus;
   numberOfParticipants?: number;
 }
+
+export type TrainingEnrollmentStatus = 'REGISTERED' | 'COMPLETED' | 'FAILED';
 
 // entity/TrainingEnrollment.java
 export interface TrainingEnrollment {
@@ -30,7 +34,7 @@ export interface TrainingEnrollment {
   employee?: EmployeeResponse;
   training?: Training;
   enrollmentDate: string;
-  status: string;
+  status: TrainingEnrollmentStatus;
   score?: number;
   certificateIssued: boolean;
 }

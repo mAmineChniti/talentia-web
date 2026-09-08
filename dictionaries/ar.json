@@ -855,7 +855,12 @@
     "end": "تاريخ النهاية",
     "creating": "جارٍ الإنشاء…",
     "createTraining": "إنشاء التدريب",
-    "successCreated": "تم إنشاء التدريب"
+    "successCreated": "تم إنشاء التدريب",
+    "cancel": "إلغاء",
+    "deleteDialogTitle": "حذف التدريب",
+    "deleteDialogDesc": "سيتم حذف هذا التدريب وجميع تسجيلاته نهائياً.",
+    "moduleLabel": "إدارة التدريبات",
+    "scoreMax": "يجب أن يكون النتيجى بين 0 و 20"
   },
   "forum": {
     "title": "الموجز المجتمعي",

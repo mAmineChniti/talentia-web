@@ -855,7 +855,12 @@
     "end": "End date",
     "creating": "Creating…",
     "createTraining": "Create training",
-    "successCreated": "Training created"
+    "successCreated": "Training created",
+    "cancel": "Cancel",
+    "deleteDialogTitle": "Delete training",
+    "deleteDialogDesc": "This training and all its enrollments will be removed permanently.",
+    "moduleLabel": "Training Management",
+    "scoreMax": "Score must be between 0 and 20"
   },
   "forum": {
     "title": "Community Feed",

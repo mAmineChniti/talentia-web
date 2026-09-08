@@ -855,7 +855,12 @@
     "end": "Date de fin",
     "creating": "Création…",
     "createTraining": "Créer la formation",
-    "successCreated": "Formation créée"
+    "successCreated": "Formation créée",
+    "cancel": "Annuler",
+    "deleteDialogTitle": "Supprimer la formation",
+    "deleteDialogDesc": "Cette formation et toutes ses inscriptions seront supprimées définitivement.",
+    "moduleLabel": "Gestion des formations",
+    "scoreMax": "Le score doit être entre 0 et 20"
   },
   "forum": {
     "title": "Fil communautaire",
