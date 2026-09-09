@@ -26,7 +26,14 @@ export interface Training {
   numberOfParticipants?: number;
 }
 
-export type TrainingEnrollmentStatus = 'REGISTERED' | 'COMPLETED' | 'FAILED';
+export type TrainingEnrollmentStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REGISTERED'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'REJECTED'
+  | 'CANCELLED';
 
 // entity/TrainingEnrollment.java
 export interface TrainingEnrollment {

@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type * as z from 'zod';
@@ -318,6 +319,14 @@ function ScanDialog({ onScanned }: { onScanned: () => void }) {
   const { dict } = useI18n();
   const t = dict.attendance;
   const [open, setOpen] = React.useState(false);
+  const [manualMode, setManualMode] = React.useState(false);
+  const [cameraError, setCameraError] = React.useState<string | undefined>(
+    undefined
+  );
+  const scannerRef = React.useRef<Html5Qrcode | undefined>(undefined);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const scannedRef = React.useRef(false);
+
   const form = useForm<ScanFormValues>({
     resolver: zodResolver(createScanSchema(dict.validation)),
     defaultValues: { qrCode: '' },
@@ -350,20 +359,101 @@ function ScanDialog({ onScanned }: { onScanned: () => void }) {
           );
         }
         form.reset({ qrCode: '' });
+        scannedRef.current = false;
         onScanned();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => {
+        toast.error(err.message);
+        scannedRef.current = false;
+      },
     }
   );
 
+  const handleQrCode = React.useCallback(
+    (qrCode: string) => {
+      if (scannedRef.current || scanMutation.isPending) return;
+      scannedRef.current = true;
+      scanMutation.mutate(qrCode);
+    },
+    [scanMutation]
+  );
+
+  const stopCamera = React.useCallback(async () => {
+    if (!scannerRef.current) {
+      return;
+    }
+
+    try {
+      await scannerRef.current.stop();
+    } catch {
+      // already stopped
+    }
+    scannerRef.current = undefined;
+  }, []);
+
+  const startCamera = React.useCallback(async () => {
+    if (!containerRef.current) return;
+    setCameraError(undefined);
+
+    try {
+      const scanner = new Html5Qrcode('qr-scanner-container');
+      scannerRef.current = scanner;
+
+      await scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => handleQrCode(decodedText),
+        () => {}
+      );
+    } catch (error) {
+      setCameraError(
+        Error.isError(error) ? error.message : 'Camera access denied'
+      );
+      setManualMode(true);
+    }
+  }, [handleQrCode]);
+
+  const handleOpenChange = React.useCallback(
+    async (isOpen: boolean) => {
+      setOpen(isOpen);
+      if (isOpen) {
+        scannedRef.current = false;
+        setManualMode(false);
+        setCameraError(undefined);
+        if (!manualMode) {
+          setTimeout(() => {
+            void startCamera();
+          }, 100);
+        }
+      } else {
+        await stopCamera();
+        form.reset({ qrCode: '' });
+      }
+    },
+    [form, manualMode, startCamera, stopCamera]
+  );
+
+  const switchToManual = React.useCallback(async () => {
+    await stopCamera();
+    setManualMode(true);
+  }, [stopCamera]);
+
+  const switchToCamera = React.useCallback(() => {
+    setManualMode(false);
+    setCameraError(undefined);
+    setTimeout(() => {
+      void startCamera();
+    }, 100);
+  }, [startCamera]);
+
+  React.useEffect(() => {
+    return () => {
+      void stopCamera();
+    };
+  }, [stopCamera]);
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (!o) form.reset({ qrCode: '' });
-      }}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger render={<Button />}>
         <Fingerprint /> {t.scanQr}
       </DialogTrigger>
@@ -372,39 +462,69 @@ function ScanDialog({ onScanned }: { onScanned: () => void }) {
           <DialogTitle>{t.scanDialogTitle}</DialogTitle>
           <DialogDescription>{t.scanDialogDesc}</DialogDescription>
         </DialogHeader>
-        <form
-          onSubmit={form.handleSubmit((values) =>
-            scanMutation.mutate(values.qrCode)
-          )}
-          className="grid gap-4 py-1"
-        >
-          <FieldGroup>
-            <Controller
-              control={form.control}
-              name="qrCode"
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="scan-code">{t.qrCode}</FieldLabel>
-                  <Input
-                    {...field}
-                    id="scan-code"
-                    placeholder={t.qrCodePlaceholder}
-                    autoFocus
-                    aria-invalid={fieldState.invalid}
-                  />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-          </FieldGroup>
-          <DialogFooter className="pt-2">
-            <Button type="submit" disabled={scanMutation.isPending}>
-              {scanMutation.isPending ? t.recording : t.clockIn}
-            </Button>
-          </DialogFooter>
-        </form>
+
+        {manualMode ? (
+          <form
+            onSubmit={form.handleSubmit((values) =>
+              scanMutation.mutate(values.qrCode)
+            )}
+            className="grid gap-4 py-1"
+          >
+            <FieldGroup>
+              <Controller
+                control={form.control}
+                name="qrCode"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="scan-code">{t.qrCode}</FieldLabel>
+                    <Input
+                      {...field}
+                      id="scan-code"
+                      placeholder={t.qrCodePlaceholder}
+                      autoFocus
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            </FieldGroup>
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={switchToCamera}>
+                {t.scanDialogTitle}
+              </Button>
+              <Button type="submit" disabled={scanMutation.isPending}>
+                {scanMutation.isPending ? t.recording : t.clockIn}
+              </Button>
+            </DialogFooter>
+          </form>
+        ) : (
+          <div className="grid gap-4 py-1">
+            {cameraError ? (
+              <p className="text-muted-foreground py-8 text-center text-sm">
+                {cameraError}
+              </p>
+            ) : (
+              <div
+                id="qr-scanner-container"
+                ref={containerRef}
+                className="relative w-full overflow-hidden rounded-lg [&>video]:w-full [&>video]:rounded-lg"
+              />
+            )}
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={switchToManual}>
+                {t.typeCode}
+              </Button>
+            </DialogFooter>
+            {scanMutation.isPending && (
+              <p className="text-muted-foreground text-center text-sm">
+                {t.recording}
+              </p>
+            )}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -316,9 +316,9 @@ export default function ProfilePage() {
                   render={({ field }) => (
                     <Textarea
                       {...field}
+                      className="bg-background border-border min-h-24 resize-none"
                       id="profile-aboutme"
                       placeholder={t.placeholders.aboutme}
-                      className="bg-background border-border min-h-24"
                     />
                   )}
                 />

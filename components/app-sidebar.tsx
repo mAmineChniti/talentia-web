@@ -34,7 +34,7 @@ import { useI18n } from '@/components/i18n-provider';
 import { useSession } from '@/hooks/use-session';
 import { useApi } from '@/hooks/use-api';
 import { employeesApi } from '@/lib/services/employees';
-import { canAccessRoute } from '@/lib/rbac';
+import { canAccessRoute, hasMinimumRole } from '@/lib/rbac';
 import { cn } from '@/lib/utils';
 
 export function AppSidebar() {
@@ -138,7 +138,9 @@ export function AppSidebar() {
             items: group.items.filter(
               (item) =>
                 canAccessRoute(user?.role, item.url) &&
-                (!item.employeeOnly || isEmployee)
+                (!item.employeeOnly ||
+                  isEmployee ||
+                  hasMinimumRole(user?.role, 'HR'))
             ),
           }))
           .filter((group) => group.items.length > 0)

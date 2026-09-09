@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useI18n } from '@/components/i18n-provider';
 
 interface FileDropProps {
   onFileSelect: (file: File) => void;
@@ -33,6 +34,8 @@ export function FileDrop({
     currentPreview || undefined
   );
   const [error, setError] = React.useState<string | undefined>(undefined);
+  const { dict } = useI18n();
+  const fd = dict.common.fileDrop;
 
   const { getRootProps, getInputProps, isDragActive, isDragReject } =
     useDropzone({
@@ -95,7 +98,7 @@ export function FileDrop({
             <div className="size-32 overflow-hidden rounded-lg">
               <Image
                 src={preview}
-                alt="Preview"
+                alt={fd.preview}
                 fill
                 className="object-cover"
               />
@@ -130,13 +133,9 @@ export function FileDrop({
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium">
-                {isDragActive
-                  ? 'Drop the image here'
-                  : 'Drag & drop an image, or click to browse'}
+                {isDragActive ? fd.dragActive : fd.dragInactive}
               </p>
-              <p className="text-muted-foreground text-xs">
-                PNG, JPG, GIF up to 5MB
-              </p>
+              <p className="text-muted-foreground text-xs">{fd.formatHint}</p>
             </div>
           </div>
         )}

@@ -1,29 +1,19 @@
 import type { Locale } from '@/i18n-config';
 import type en from '@/dictionaries/en.json';
+import enDict from '@/dictionaries/en.json';
+import frDict from '@/dictionaries/fr.json';
+import arDict from '@/dictionaries/ar.json';
 
 type DictionaryContent = typeof en;
 
-const dictionaries: Record<Locale, () => Promise<DictionaryContent>> = {
-  fr: async () => {
-    const dict = await import('@/dictionaries/fr.json');
-    return dict.default;
-  },
-  en: async () => {
-    const dict = await import('@/dictionaries/en.json');
-    return dict.default;
-  },
-  ar: async () => {
-    const dict = await import('@/dictionaries/ar.json');
-    return dict.default;
-  },
+const dictionaries: Record<Locale, DictionaryContent> = {
+  en: enDict,
+  fr: frDict,
+  ar: arDict,
 };
 
 export const getDictionary = async (locale: Locale) => {
-  const dictLoader = dictionaries[locale];
-  if (!dictLoader) {
-    return dictionaries.fr();
-  }
-  return dictLoader();
+  return dictionaries[locale] ?? dictionaries.fr;
 };
 
 export type Dictionary = DictionaryContent;

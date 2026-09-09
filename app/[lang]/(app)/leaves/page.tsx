@@ -25,11 +25,11 @@ import { createLeaveSchema, LEAVE_TYPES } from '@/lib/schemas/leaves';
 import { employeesApi } from '@/lib/services/employees';
 import { leavesApi } from '@/lib/services/leaves';
 import { usersApi } from '@/lib/services/users';
-import type { EmployeeResponse } from '@/lib/types/employees';
 import type { LeaveResponse } from '@/lib/types/leaves';
 import type { User } from '@/lib/types/users';
-import { formatDate, fullName } from '@/lib/format';
+import { formatDate } from '@/lib/format';
 import { PageHeader } from '@/components/page-header';
+import { EmployeeCombobox } from '@/components/employee-combobox';
 import { StatCard } from '@/components/stat-card';
 import { StatusBadge } from '@/components/status-badge';
 import { EmptyState, ErrorState } from '@/components/states';
@@ -423,7 +423,7 @@ function RequestLeaveDialog() {
   const form = useForm<LeaveFormValues>({
     resolver: zodResolver(createLeaveSchema(dict.validation)),
     defaultValues: {
-      employeeId: 0,
+      employeeId: undefined,
       type: 'ANNUAL',
       startDate: '',
       endDate: '',
@@ -476,27 +476,15 @@ function RequestLeaveDialog() {
                     <FieldLabel htmlFor="leave-employee">
                       {t.employee}
                     </FieldLabel>
-                    <Select
-                      name={field.name}
-                      value={String(field.value || '')}
-                      onValueChange={(v) => field.onChange(Number(v))}
-                    >
-                      <SelectTrigger
-                        id="leave-employee"
-                        aria-invalid={fieldState.invalid}
-                      >
-                        <SelectValue placeholder={t.selectEmployee} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employeeOptions(employees.data ?? [], userMap).map(
-                          (o) => (
-                            <SelectItem key={o.id} value={String(o.id)}>
-                              {o.name}
-                            </SelectItem>
-                          )
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <EmployeeCombobox
+                      employees={employees.data ?? []}
+                      userMap={userMap}
+                      value={field.value}
+                      onValueChange={(v) => field.onChange(v ?? 0)}
+                      placeholder={t.selectEmployee}
+                      id="leave-employee"
+                      aria-invalid={fieldState.invalid}
+                    />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}
@@ -620,20 +608,4 @@ function RequestLeaveDialog() {
       </DialogContent>
     </Dialog>
   );
-}
-
-function employeeOptions(
-  employees: EmployeeResponse[],
-  userMap: Map<number, User>
-) {
-  return employees
-    .filter((e) => userMap.has(e.userId))
-    .map((e) => {
-      const user = userMap.get(e.userId);
-      return {
-        id: e.id,
-        name: fullName(user?.name, user?.lastname),
-      };
-    })
-    .toSorted((a, b) => a.name.localeCompare(b.name));
 }

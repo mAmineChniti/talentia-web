@@ -56,7 +56,7 @@ export function SiteFooter() {
               {dict.metadata.description}
             </p>
             <p className="text-muted-foreground/70 text-xs">
-              © {now.getFullYear()} TalentIA. {f.rights}
+              {f.copyrightBefore} {now.getFullYear()} {f.copyrightAfter}
             </p>
           </div>
 
@@ -89,7 +89,7 @@ export function SiteFooter() {
 
         <div className="text-muted-foreground flex flex-col items-center justify-between gap-3 border-t py-6 text-xs sm:flex-row">
           <p>
-            © {now.getFullYear()} TalentIA. {f.rights}
+            {f.copyrightBefore} {now.getFullYear()} {f.copyrightAfter}
           </p>
           <div className="flex items-center gap-5">
             <span>{f.privacy}</span>

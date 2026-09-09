@@ -6,6 +6,7 @@ export interface PostRequest {
   contenu: string;
   typePost: TypePost;
   auteurId: number;
+  trainingId?: number;
 }
 
 export interface PostResponse {
@@ -18,6 +19,14 @@ export interface PostResponse {
   auteurLastname: string;
   nombreLikes: number;
   likedByCurrentUser: boolean;
+  // Training info (only set for FORMATION posts)
+  trainingId?: number;
+  trainingTitle?: string;
+  trainingTrainer?: string;
+  trainingLocation?: string;
+  trainingCapacity?: number;
+  trainingEnrollmentCount?: number;
+  trainingStatus?: string;
 }
 
 // entity/Commentaire.java

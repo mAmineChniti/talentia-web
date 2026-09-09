@@ -36,12 +36,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@/components/ui/combobox';
 import {
   Table,
   TableBody,
@@ -280,7 +281,9 @@ function GeneratePayslipDialog({
   const { dict } = useI18n();
   const t = dict.payslips;
   const [open, setOpen] = React.useState(false);
-  const [payrollId, setPayrollId] = React.useState<number>(0);
+  const [payrollId, setPayrollId] = React.useState<number | undefined>(
+    undefined
+  );
 
   const generateMutation = useApiMutation<number, PayslipResponse>(
     (id) => payslipsApi.generate(id),
@@ -291,7 +294,7 @@ function GeneratePayslipDialog({
           t.successGenerated.split('{name}').join(data.employeeName)
         );
         setOpen(false);
-        setPayrollId(0);
+        setPayrollId(undefined);
       },
       onError: (err) => toast.error(err.message),
     }
@@ -323,21 +326,29 @@ function GeneratePayslipDialog({
             >
               {t.selectPayroll}
             </label>
-            <Select
-              value={payrollId ? String(payrollId) : ''}
-              onValueChange={(v) => setPayrollId(Number(v))}
+            <Combobox
+              items={payrolls}
+              value={payrolls.find((p) => p.id === payrollId)}
+              onValueChange={(v) => setPayrollId(v?.id)}
+              itemToStringValue={(p) =>
+                `${p.employeeName} — ${monthName(p.month)} ${p.year}`
+              }
             >
-              <SelectTrigger id="payslip-payroll">
-                <SelectValue placeholder={t.selectPayroll} />
-              </SelectTrigger>
-              <SelectContent>
-                {payrolls.map((p) => (
-                  <SelectItem key={p.id} value={String(p.id)}>
-                    {p.employeeName} — {monthName(p.month)} {p.year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <ComboboxInput
+                placeholder={t.selectPayroll}
+                id="payslip-payroll"
+              />
+              <ComboboxContent>
+                <ComboboxEmpty>No results found.</ComboboxEmpty>
+                <ComboboxList>
+                  {(p) => (
+                    <ComboboxItem key={p.id} value={p}>
+                      {p.employeeName} — {monthName(p.month)} {p.year}
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
             {selected && (
               <div className="text-muted-foreground text-sm">
                 {t.netSalaryLabel}{' '}
@@ -348,7 +359,7 @@ function GeneratePayslipDialog({
           <DialogFooter className="pt-2">
             <Button
               type="button"
-              onClick={() => generateMutation.mutate(payrollId)}
+              onClick={() => generateMutation.mutate(payrollId!)}
               disabled={!payrollId || generateMutation.isPending}
             >
               {generateMutation.isPending ? t.generating : t.generatePdf}
