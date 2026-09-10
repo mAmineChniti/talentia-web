@@ -12,7 +12,9 @@ import {
   ChevronUp,
   CircleCheck,
   CircleX,
+  GraduationCap,
   Heart,
+  MapPin,
   MessagesSquare,
   Plus,
   Send,
@@ -33,11 +35,15 @@ import { useSession } from '@/hooks/use-session';
 import { hasMinimumRole } from '@/lib/rbac';
 import { applicationsApi } from '@/lib/services/applications';
 import { commentairesApi, postsApi } from '@/lib/services/posts';
+import { trainingsApi } from '@/lib/services/trainings';
+import { employeesApi } from '@/lib/services/employees';
 import { interviewsApi } from '@/lib/services/interviews';
+import { usersApi } from '@/lib/services/users';
 import type { InterviewResponse } from '@/lib/types/interviews';
 import { createInterviewSchema } from '@/lib/schemas/interviews';
 import type { PostResponse, TypePost } from '@/lib/types/posts';
 import type { ApplicationResponse } from '@/lib/types/applications';
+import type { User } from '@/lib/types/users';
 import { FileDrop } from '@/components/file-drop';
 import {
   formatDateTime,
@@ -49,7 +55,7 @@ import {
 import { PageHeader } from '@/components/page-header';
 import { EmptyState, ErrorState } from '@/components/states';
 import { StatusBadge } from '@/components/status-badge';
-import { DateTimePicker } from '@/components/ui/date-picker';
+import { DateTimePicker, DatePicker } from '@/components/ui/date-picker';
 import {
   Field,
   FieldError,
@@ -144,7 +150,7 @@ function ScoreRing({ score, size = 56 }: { score: number; size?: number }) {
         <RadialBar
           dataKey="value"
           fill={color}
-          background={{ fill: 'var(--muted)' }}
+          background={{ className: 'fill-muted' }}
           cornerRadius={999}
         />
       </RadialBarChart>
@@ -177,12 +183,24 @@ export default function ForumPage() {
   const [activeFilter, setActiveFilter] = React.useState<TypePost | 'ALL'>(
     'ALL'
   );
+  const [dateFilter, setDateFilter] = React.useState<
+    'ALL' | 'TODAY' | 'WEEK' | 'MONTH'
+  >('ALL');
   const {
     data: posts,
     loading,
     error,
     refetch,
   } = useApi('posts.list', () => postsApi.list());
+
+  const { data: users } = useApi('users.list', () => usersApi.list());
+  const userMap = React.useMemo(() => {
+    const m = new Map<number, User>();
+    if (users) {
+      for (const u of users) m.set(u.id, u);
+    }
+    return m;
+  }, [users]);
 
   const { data: allApplications } = useApi(
     'applications.list',
@@ -202,18 +220,39 @@ export default function ForumPage() {
   const sortedPosts = React.useMemo(() => {
     const list = posts ?? [];
     return list.toSorted((a, b) => {
-      if (a.typePost === 'POSTE_TRAVAIL' && b.typePost !== 'POSTE_TRAVAIL')
-        return -1;
-      if (a.typePost !== 'POSTE_TRAVAIL' && b.typePost === 'POSTE_TRAVAIL')
-        return 1;
-      return 0;
+      const aDate = new Date(a.dateCreation);
+      const bDate = new Date(b.dateCreation);
+      return bDate.getTime() - aDate.getTime();
     });
   }, [posts]);
 
   const filteredPosts = React.useMemo(() => {
-    if (activeFilter === 'ALL') return sortedPosts;
-    return sortedPosts.filter((p) => p.typePost === activeFilter);
-  }, [sortedPosts, activeFilter]);
+    let result = sortedPosts;
+
+    result =
+      activeFilter === 'ALL'
+        ? [
+            ...result.filter((p) => p.typePost === 'POSTE_TRAVAIL'),
+            ...result.filter((p) => p.typePost !== 'POSTE_TRAVAIL'),
+          ]
+        : result.filter((p) => p.typePost === activeFilter);
+
+    if (dateFilter !== 'ALL') {
+      const now = new Date();
+      let cutoff: Date;
+      if (dateFilter === 'TODAY') {
+        cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      } else if (dateFilter === 'WEEK') {
+        cutoff = new Date(now);
+        cutoff.setDate(cutoff.getDate() - 7);
+      } else {
+        cutoff = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+      result = result.filter((p) => new Date(p.dateCreation) >= cutoff);
+    }
+
+    return result;
+  }, [sortedPosts, activeFilter, dateFilter]);
 
   return (
     <div className="grid gap-6">
@@ -249,9 +288,15 @@ export default function ForumPage() {
                 setActiveFilter(v as TypePost | 'ALL');
                 setVisibleCount(POSTS_PER_PAGE);
               }}
+              items={[
+                { value: 'ALL', label: t.filterAll },
+                { value: 'POSTE_TRAVAIL', label: t.filterJobOpenings },
+                { value: 'PUBLICITE', label: t.filterAnnouncements },
+                { value: 'FORMATION', label: t.filterTrainings },
+              ]}
             >
               <SelectTrigger className="h-10 w-55">
-                <SelectValue />
+                <SelectValue placeholder={t.filterAll} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">{t.filterAll}</SelectItem>
@@ -264,6 +309,29 @@ export default function ForumPage() {
                 <SelectItem value="FORMATION">{t.filterTrainings}</SelectItem>
               </SelectContent>
             </Select>
+            <Select
+              value={dateFilter}
+              onValueChange={(v) => {
+                setDateFilter(v as 'ALL' | 'TODAY' | 'WEEK' | 'MONTH');
+                setVisibleCount(POSTS_PER_PAGE);
+              }}
+              items={[
+                { value: 'ALL', label: t.filterAllDates },
+                { value: 'TODAY', label: t.filterToday },
+                { value: 'WEEK', label: t.filterThisWeek },
+                { value: 'MONTH', label: t.filterThisMonth },
+              ]}
+            >
+              <SelectTrigger className="h-10 w-40">
+                <SelectValue placeholder={t.filterAllDates} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t.filterAllDates}</SelectItem>
+                <SelectItem value="TODAY">{t.filterToday}</SelectItem>
+                <SelectItem value="WEEK">{t.filterThisWeek}</SelectItem>
+                <SelectItem value="MONTH">{t.filterThisMonth}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-4">
             {filteredPosts.slice(0, visibleCount).map((post) => (
@@ -272,6 +340,7 @@ export default function ForumPage() {
                 post={post}
                 applied={appliedPostIds.has(post.id)}
                 onChanged={refetch}
+                userMap={userMap}
               />
             ))}
             {filteredPosts.length > visibleCount && (
@@ -296,10 +365,12 @@ function PostCard({
   post,
   applied,
   onChanged,
+  userMap,
 }: {
   post: PostResponse;
   applied: boolean;
   onChanged: () => void;
+  userMap: Map<number, { profileImageUrl?: string }>;
 }) {
   const { dict } = useI18n();
   const t = dict.forum;
@@ -312,6 +383,7 @@ function PostCard({
   const [liked, setLiked] = React.useState(post.likedByCurrentUser);
 
   const authorName = fullName(post.auteurName, post.auteurLastname);
+  const authorUser = userMap.get(post.auteurId);
 
   const likeMutation = useApiMutation<number, PostResponse>(
     (postId) => postsApi.like(postId, user?.id ?? 0),
@@ -341,7 +413,7 @@ function PostCard({
       <CardHeader className="gap-4 p-6 pb-4">
         <div className="flex items-start gap-4">
           <Avatar className="ring-background size-12 ring-2">
-            <AvatarImage src={undefined} />
+            <AvatarImage src={authorUser?.profileImageUrl} />
             <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
               {authorName.replace('—', '').trim().charAt(0) || '?'}
             </AvatarFallback>
@@ -369,6 +441,29 @@ function PostCard({
         <p className="text-base leading-relaxed whitespace-pre-wrap">
           {post.contenu}
         </p>
+        {post.typePost === 'FORMATION' && post.trainingId && (
+          <div className="bg-muted/40 mt-4 space-y-2 rounded-xl border p-4">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="text-muted-foreground size-4" />
+              <p className="text-sm font-semibold">{post.trainingTitle}</p>
+            </div>
+            <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs">
+              {post.trainingTrainer && <span>By {post.trainingTrainer}</span>}
+              {post.trainingLocation && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="size-3" /> {post.trainingLocation}
+                </span>
+              )}
+              {post.trainingCapacity != undefined &&
+                post.trainingEnrollmentCount != undefined && (
+                  <span className="inline-flex items-center gap-1">
+                    <Users className="size-3" /> {post.trainingEnrollmentCount}/
+                    {post.trainingCapacity}
+                  </span>
+                )}
+            </div>
+          </div>
+        )}
       </CardContent>
       <CardFooter className="bg-muted/30 justify-center gap-2 border-t px-6 py-3">
         <Button
@@ -403,10 +498,16 @@ function PostCard({
           />
         )}
         {user &&
+          !canModerate &&
           post.typePost === 'POSTE_TRAVAIL' &&
           post.auteurId !== user.id && (
             <ApplyDialog post={post} applied={applied} />
           )}
+        {user &&
+          !canModerate &&
+          post.typePost === 'FORMATION' &&
+          post.trainingId &&
+          post.auteurId !== user.id && <TrainingApplyButton post={post} />}
         {canModerate && post.typePost === 'POSTE_TRAVAIL' && (
           <Button
             variant="ghost"
@@ -416,6 +517,22 @@ function PostCard({
           >
             <Users className="size-4" />{' '}
             {showApplicants ? t.hideApplicants : t.viewApplicants}
+            {showApplicants ? (
+              <ChevronUp className="size-3.5" />
+            ) : (
+              <ChevronDown className="size-3.5" />
+            )}
+          </Button>
+        )}
+        {canModerate && post.typePost === 'FORMATION' && post.trainingId && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground gap-2"
+            onClick={() => setShowApplicants((v) => !v)}
+          >
+            <Users className="size-4" />{' '}
+            {showApplicants ? t.trainingHideManage : t.trainingManage}
             {showApplicants ? (
               <ChevronUp className="size-3.5" />
             ) : (
@@ -433,6 +550,18 @@ function PostCard({
           <ApplicantsList postId={post.id} />
         </div>
       )}
+
+      {showApplicants &&
+        canModerate &&
+        post.typePost === 'FORMATION' &&
+        post.trainingId && (
+          <div className="bg-muted/20 border-t px-6 py-4">
+            <p className="text-muted-foreground mb-3 text-xs font-medium tracking-wide uppercase">
+              {t.trainingEnrollments}
+            </p>
+            <TrainingEnrollmentsPanel trainingId={post.trainingId} />
+          </div>
+        )}
 
       {showComments && (
         <div className="bg-muted/20 border-t px-6 py-4">
@@ -536,6 +665,7 @@ function ApplyDialog({
           <div className="space-y-1.5">
             <label className="text-sm font-medium">{t.motivationLabel}</label>
             <Textarea
+              className="resize-none"
               value={motivation}
               onChange={(e) => setMotivation(e.target.value)}
               placeholder={t.motivationPlaceholder}
@@ -564,6 +694,235 @@ function ApplyDialog({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function TrainingApplyButton({ post }: { post: PostResponse }) {
+  const { dict } = useI18n();
+  const t = dict.forum;
+  const { user } = useSession({ redirectToLoginOnMissing: false });
+  const { data: employees } = useApi('employees.list', () =>
+    employeesApi.list()
+  );
+
+  const myEmployee = React.useMemo(() => {
+    if (!user || !employees) return;
+    return employees.find((e) => e.userId === user.id);
+  }, [user, employees]);
+
+  const { data: myEnrollments } = useApi(
+    ['trainings.employee', String(myEmployee?.id)],
+    () => trainingsApi.listByEmployee(myEmployee!.id),
+    { enabled: !!myEmployee }
+  );
+
+  const isEnrolled = React.useMemo(() => {
+    if (!myEnrollments || !post.trainingId) return false;
+    return myEnrollments.some(
+      (e) =>
+        e.training?.id === post.trainingId &&
+        e.status !== 'CANCELLED' &&
+        e.status !== 'REJECTED'
+    );
+  }, [myEnrollments, post.trainingId]);
+
+  const enrollMutation = useApiMutation<
+    { trainingId: number; employeeId: number; status: string },
+    unknown
+  >(
+    ({ trainingId, employeeId, status }) =>
+      trainingsApi.enroll(trainingId, employeeId, status as never),
+    {
+      invalidate: ['trainings.list'],
+      onSuccess: () => {
+        toast.success(t.trainingApplySuccess);
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+
+  if (isEnrolled) {
+    return (
+      <Button size="sm" variant="outline" disabled>
+        <CheckCircle2 className="size-4" /> {t.trainingApplied}
+      </Button>
+    );
+  }
+
+  const isFull =
+    post.trainingCapacity != undefined &&
+    post.trainingEnrollmentCount != undefined &&
+    post.trainingEnrollmentCount >= post.trainingCapacity;
+
+  return (
+    <Button
+      size="sm"
+      disabled={!myEmployee || isFull || enrollMutation.isPending}
+      onClick={() => {
+        if (myEmployee && post.trainingId) {
+          enrollMutation.mutate({
+            trainingId: post.trainingId,
+            employeeId: myEmployee.id,
+            status: 'PENDING',
+          });
+        }
+      }}
+    >
+      <GraduationCap className="size-4" />{' '}
+      {isFull ? t.trainingFull : t.trainingApply}
+    </Button>
+  );
+}
+
+function forumEnrollmentStatusColor(s: string) {
+  if (s === 'PENDING') return 'bg-chart-3/15 text-chart-3';
+  if (s === 'APPROVED' || s === 'REGISTERED')
+    return 'bg-chart-2/15 text-chart-2';
+  if (s === 'REJECTED') return 'bg-destructive/15 text-destructive';
+  return 'bg-muted text-muted-foreground';
+}
+
+function TrainingEnrollmentsPanel({ trainingId }: { trainingId: number }) {
+  const { dict } = useI18n();
+  const t = dict.forum;
+  const {
+    data: enrollments,
+    loading,
+    error,
+    refetch,
+  } = useApi(['trainings.enrollments', String(trainingId)], () =>
+    trainingsApi.listEnrollments(trainingId)
+  );
+
+  const statusMutation = useApiMutation<
+    { enrollmentId: number; status: string },
+    unknown
+  >(
+    ({ enrollmentId, status }) =>
+      trainingsApi.updateEnrollmentStatus(
+        enrollmentId,
+        status as 'APPROVED' | 'REJECTED' | 'CANCELLED'
+      ),
+    {
+      invalidate: [['trainings.enrollments', String(trainingId)]],
+      onSuccess: () => {
+        refetch();
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+
+  const removeMutation = useApiMutation<number, unknown>(
+    (enrollmentId) => trainingsApi.removeEnrollment(enrollmentId),
+    {
+      invalidate: [['trainings.enrollments', String(trainingId)]],
+      onSuccess: () => {
+        toast.success(t.trainingRemoved);
+        refetch();
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+
+  if (loading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <p className="text-destructive text-xs">{error.message}</p>;
+  }
+
+  const list = enrollments ?? [];
+
+  if (list.length === 0) {
+    return (
+      <p className="text-muted-foreground py-2 text-center text-xs">
+        {t.noApplicants}
+      </p>
+    );
+  }
+
+  const statusLabel = (s: string) => {
+    if (s === 'PENDING') return t.trainingPending;
+    if (s === 'APPROVED' || s === 'REGISTERED') return t.trainingApprovedStatus;
+    if (s === 'REJECTED') return t.trainingRejectedStatus;
+    return s;
+  };
+
+  return (
+    <div className="space-y-2">
+      {list.map((enrollment) => (
+        <div
+          key={enrollment.id}
+          className="bg-muted/40 flex items-center gap-3 rounded-xl p-3"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">
+              {enrollment.employee
+                ? `${enrollment.employee.department} — Employee #${enrollment.employee.employeeCode ?? enrollment.employee.id}`
+                : '—'}
+            </p>
+            <p className="text-muted-foreground text-xs">
+              {formatDate(enrollment.enrollmentDate)}
+            </p>
+          </div>
+          <span
+            className={cn(
+              'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset',
+              forumEnrollmentStatusColor(enrollment.status)
+            )}
+          >
+            {statusLabel(enrollment.status)}
+          </span>
+          {enrollment.status === 'PENDING' && (
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-chart-2 hover:bg-chart-2/10 hover:text-chart-2"
+                disabled={statusMutation.isPending}
+                onClick={() =>
+                  statusMutation.mutate({
+                    enrollmentId: enrollment.id,
+                    status: 'APPROVED',
+                  })
+                }
+              >
+                <CircleCheck className="size-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                disabled={statusMutation.isPending}
+                onClick={() =>
+                  statusMutation.mutate({
+                    enrollmentId: enrollment.id,
+                    status: 'REJECTED',
+                  })
+                }
+              >
+                <CircleX className="size-4" />
+              </Button>
+            </div>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            disabled={removeMutation.isPending}
+            onClick={() => removeMutation.mutate(enrollment.id)}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -621,21 +980,35 @@ function NewPostDialog({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = React.useState(false);
   const [typePost, setTypePost] = React.useState<TypePost>('PUBLICITE');
   const [contenu, setContenu] = React.useState('');
+  const [trainingTitle, setTrainingTitle] = React.useState('');
+  const [trainingTrainer, setTrainingTrainer] = React.useState('');
+  const [trainingLocation, setTrainingLocation] = React.useState('');
+  const [trainingStartDate, setTrainingStartDate] = React.useState('');
+  const [trainingEndDate, setTrainingEndDate] = React.useState('');
+  const [trainingCapacity, setTrainingCapacity] = React.useState(20);
 
-  const createMutation = useApiMutation<
-    { contenu: string; typePost: TypePost; auteurId: number },
-    PostResponse
-  >((body) => postsApi.create(body), {
-    invalidate: ['posts.list'],
-    onSuccess: () => {
-      toast.success(t.successCreated);
-      setOpen(false);
-      setContenu('');
-      setTypePost('PUBLICITE');
-      onCreated();
-    },
-    onError: (err) => toast.error(err.message),
-  });
+  const isFormation = typePost === 'FORMATION';
+
+  const createMutation = useApiMutation<PostResponse, PostResponse>(
+    (body) => postsApi.create(body),
+    {
+      invalidate: ['posts.list'],
+      onSuccess: () => {
+        toast.success(t.successCreated);
+        setOpen(false);
+        setContenu('');
+        setTypePost('PUBLICITE');
+        setTrainingTitle('');
+        setTrainingTrainer('');
+        setTrainingLocation('');
+        setTrainingStartDate('');
+        setTrainingEndDate('');
+        setTrainingCapacity(20);
+        onCreated();
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -671,23 +1044,119 @@ function NewPostDialog({ onCreated }: { onCreated: () => void }) {
           <div className="space-y-1.5">
             <label className="text-sm font-medium">{t.contentLabel}</label>
             <Textarea
+              className="resize-none"
               value={contenu}
               onChange={(e) => setContenu(e.target.value)}
               placeholder={t.contentPlaceholder}
-              rows={5}
+              rows={isFormation ? 3 : 5}
             />
           </div>
+
+          {isFormation && (
+            <div className="bg-muted/30 space-y-4 rounded-xl border p-4">
+              <p className="text-sm font-medium">{t.types.FORMATION}</p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium">
+                    {t.trainingTitleLabel}
+                  </label>
+                  <Input
+                    value={trainingTitle}
+                    onChange={(e) => setTrainingTitle(e.target.value)}
+                    placeholder={t.trainingTitlePlaceholder}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium">
+                    {t.trainingTrainerLabel}
+                  </label>
+                  <Input
+                    value={trainingTrainer}
+                    onChange={(e) => setTrainingTrainer(e.target.value)}
+                    placeholder={t.trainingTrainerPlaceholder}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium">
+                    {t.trainingLocationLabel}
+                  </label>
+                  <Input
+                    value={trainingLocation}
+                    onChange={(e) => setTrainingLocation(e.target.value)}
+                    placeholder={t.trainingLocationPlaceholder}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium">
+                    {t.trainingCapacityLabel}
+                  </label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={trainingCapacity}
+                    onChange={(e) =>
+                      setTrainingCapacity(
+                        e.target.value === '' ? 1 : Number(e.target.value)
+                      )
+                    }
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium">
+                    {t.trainingStartDateLabel}
+                  </label>
+                  <DatePicker
+                    value={trainingStartDate}
+                    onChange={(v) => setTrainingStartDate(v ?? '')}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium">
+                    {t.trainingEndDateLabel}
+                  </label>
+                  <DatePicker
+                    value={trainingEndDate}
+                    onChange={(v) => setTrainingEndDate(v ?? '')}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           <DialogFooter className="pt-2">
             <Button
-              onClick={() =>
-                user &&
+              onClick={async () => {
+                if (!user) return;
+                let trainingId: number | undefined;
+                if (isFormation) {
+                  const training = await trainingsApi.create({
+                    title: trainingTitle || contenu,
+                    description: contenu,
+                    trainer: trainingTrainer,
+                    location: trainingLocation,
+                    startDate: trainingStartDate || undefined,
+                    endDate: trainingEndDate || undefined,
+                    capacity: trainingCapacity,
+                  } as never);
+                  trainingId = training.id;
+                }
                 createMutation.mutate({
                   contenu,
                   typePost,
                   auteurId: user.id,
-                })
+                  trainingId,
+                } as PostResponse);
+              }}
+              disabled={
+                !contenu.trim() ||
+                !user ||
+                createMutation.isPending ||
+                (isFormation && !trainingTitle.trim())
               }
-              disabled={!contenu.trim() || !user || createMutation.isPending}
             >
               {createMutation.isPending ? t.submitting : t.submit}
             </Button>
@@ -749,11 +1218,11 @@ function CommentsList({ postId }: { postId: number }) {
       {user && (
         <div className="flex items-end gap-2">
           <Textarea
+            className="min-h-[38px] flex-1 resize-none text-sm"
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={t.commentPlaceholder}
             rows={1}
-            className="min-h-[38px] flex-1 resize-none text-sm"
           />
           <Button
             size="sm"
@@ -796,7 +1265,7 @@ function CommentsList({ postId }: { postId: number }) {
                 className="bg-muted/40 flex items-start gap-2.5 rounded-xl p-3"
               >
                 <Avatar className="size-7">
-                  <AvatarImage src={undefined} />
+                  <AvatarImage src={comment.auteur?.profileImageUrl} />
                   <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
                     {name.charAt(0) || '?'}
                   </AvatarFallback>

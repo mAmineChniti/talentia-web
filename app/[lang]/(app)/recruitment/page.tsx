@@ -148,7 +148,7 @@ function ScoreRing({ score, size = 56 }: { score: number; size?: number }) {
         <RadialBar
           dataKey="value"
           fill={color}
-          background={{ fill: 'var(--muted)' }}
+          background={{ className: 'fill-muted' }}
           cornerRadius={999}
         />
       </RadialBarChart>

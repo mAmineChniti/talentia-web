@@ -28,8 +28,9 @@ import { usersApi } from '@/lib/services/users';
 import type { EmployeeResponse } from '@/lib/types/employees';
 import type { PayrollResponse } from '@/lib/types/payroll';
 import type { User } from '@/lib/types/users';
-import { formatCurrency, fullName, monthName } from '@/lib/format';
+import { formatCurrency, monthName } from '@/lib/format';
 import { PageHeader } from '@/components/page-header';
+import { EmployeeCombobox } from '@/components/employee-combobox';
 import { StatCard } from '@/components/stat-card';
 import { EmptyState, ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
@@ -461,7 +462,7 @@ function AddPayrollDialog({
   const form = useForm<PayrollFormValues>({
     resolver: zodResolver(createPayrollSchema(dict.validation)),
     defaultValues: {
-      employeeId: 0,
+      employeeId: undefined,
       month: thisMonth(),
       year: thisYear(),
       bonus: 0,
@@ -515,25 +516,15 @@ function AddPayrollDialog({
                   <FieldLabel htmlFor="payroll-employee">
                     {t.employee}
                   </FieldLabel>
-                  <Select
-                    name={field.name}
-                    value={String(field.value || '')}
-                    onValueChange={(v) => field.onChange(Number(v))}
-                  >
-                    <SelectTrigger
-                      id="payroll-employee"
-                      aria-invalid={fieldState.invalid}
-                    >
-                      <SelectValue placeholder={t.selectEmployee} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {employeeOptions(employees, userMap).map((o) => (
-                        <SelectItem key={o.id} value={String(o.id)}>
-                          {o.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <EmployeeCombobox
+                    employees={employees}
+                    userMap={userMap}
+                    value={field.value}
+                    onValueChange={(v) => field.onChange(v ?? 0)}
+                    placeholder={t.selectEmployee}
+                    id="payroll-employee"
+                    aria-invalid={fieldState.invalid}
+                  />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}
@@ -585,20 +576,4 @@ function AddPayrollDialog({
       </DialogContent>
     </Dialog>
   );
-}
-
-function employeeOptions(
-  employees: EmployeeResponse[],
-  userMap: Map<number, User>
-) {
-  return employees
-    .filter((e) => userMap.has(e.userId))
-    .map((e) => {
-      const user = userMap.get(e.userId);
-      return {
-        id: e.id,
-        name: fullName(user?.name, user?.lastname),
-      };
-    })
-    .toSorted((a, b) => a.name.localeCompare(b.name));
 }

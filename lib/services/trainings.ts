@@ -1,6 +1,7 @@
 import type {
   Training,
   TrainingEnrollment,
+  TrainingEnrollmentStatus,
   TrainingRequest,
 } from '@/lib/types/trainings';
 
@@ -13,12 +14,14 @@ export const trainingsApi = {
     request<Training>('/trainings', { method: 'POST', json: body }),
   remove: (id: number) =>
     request<string>(`/trainings/${id}`, { method: 'DELETE' }),
-  enroll: (trainingId: number, employeeId: number) => {
+  enroll: (
+    trainingId: number,
+    employeeId: number,
+    status: TrainingEnrollmentStatus = 'REGISTERED'
+  ) => {
     return request<TrainingEnrollment>(
-      `/trainings/${trainingId}/employees/${employeeId}`,
-      {
-        method: 'POST',
-      }
+      `/trainings/${trainingId}/employees/${employeeId}/${status}`,
+      { method: 'POST' }
     );
   },
   complete: (enrollmentId: number, score: number) => {
@@ -29,4 +32,18 @@ export const trainingsApi = {
   },
   listByEmployee: (employeeId: number) =>
     request<TrainingEnrollment[]>(`/trainings/employee/${employeeId}`),
+  listEnrollments: (trainingId: number) =>
+    request<TrainingEnrollment[]>(`/trainings/${trainingId}/enrollments`),
+  updateEnrollmentStatus: (
+    enrollmentId: number,
+    status: TrainingEnrollmentStatus
+  ) =>
+    request<TrainingEnrollment>(
+      `/trainings/enrollments/${enrollmentId}/status`,
+      { method: 'PUT', searchParams: { status } }
+    ),
+  removeEnrollment: (enrollmentId: number) =>
+    request<string>(`/trainings/enrollments/${enrollmentId}`, {
+      method: 'DELETE',
+    }),
 };

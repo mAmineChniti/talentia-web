@@ -28,6 +28,15 @@ import type { TrainingEnrollment } from '@/lib/types/trainings';
 import type { User } from '@/lib/types/users';
 import { formatCurrency, formatDate, fullName, initials } from '@/lib/format';
 import { PageHeader } from '@/components/page-header';
+import { UserCombobox } from '@/components/employee-combobox';
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@/components/ui/combobox';
 import { StatusBadge } from '@/components/status-badge';
 import { EmptyState, ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
@@ -175,7 +184,7 @@ export default function EmployeesPage() {
           tone="bg-primary/10 text-primary"
         />
         <SummaryTile
-          label={t.departments ?? 'Départements'}
+          label={t.departments}
           value={departments.length}
           hint={t.count.split('{count}').join(String(departments.length))}
           icon={<Briefcase className="size-4" />}
@@ -202,25 +211,26 @@ export default function EmployeesPage() {
                 className="bg-muted/40 ps-9"
               />
             </div>
-            <Select
+            <Combobox
+              items={['all', ...departments]}
               value={department}
               onValueChange={(v) => setDepartment(v ?? 'all')}
             >
-              <SelectTrigger
+              <ComboboxInput
+                placeholder={t.allDepartments}
                 className="w-full sm:w-52"
-                aria-label={t.department}
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t.allDepartments}</SelectItem>
-                {departments.map((d) => (
-                  <SelectItem key={d} value={d}>
-                    {d}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              />
+              <ComboboxContent>
+                <ComboboxEmpty>No results found.</ComboboxEmpty>
+                <ComboboxList>
+                  {(item) => (
+                    <ComboboxItem key={item} value={item}>
+                      {item === 'all' ? t.allDepartments : item}
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
             <span className="text-muted-foreground ms-auto hidden text-xs sm:inline">
               {filtered.length}/{employees?.length ?? 0}
             </span>
@@ -685,7 +695,7 @@ function EmployeeForm({
           salary: initial.salary,
         }
       : {
-          userId: 0,
+          userId: undefined,
           department: '',
           position: '',
           contractType: 'CDI',
@@ -737,25 +747,14 @@ function EmployeeForm({
             render={({ field, fieldState }) => (
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor="employee-user">{t.user}</FieldLabel>
-                <Select
-                  name={field.name}
-                  value={String(field.value || '')}
-                  onValueChange={(v) => field.onChange(Number(v))}
-                >
-                  <SelectTrigger
-                    id="employee-user"
-                    aria-invalid={fieldState.invalid}
-                  >
-                    <SelectValue placeholder={t.selectUser} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users?.map((u) => (
-                      <SelectItem key={u.id} value={String(u.id)}>
-                        {fullName(u.name, u.lastname)} — {u.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <UserCombobox
+                  users={users ?? []}
+                  value={field.value}
+                  onValueChange={(v) => field.onChange(v ?? 0)}
+                  placeholder={t.selectUser}
+                  id="employee-user"
+                  aria-invalid={fieldState.invalid}
+                />
                 {fieldState.invalid && (
                   <FieldError errors={[fieldState.error]} />
                 )}

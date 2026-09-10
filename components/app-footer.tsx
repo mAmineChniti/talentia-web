@@ -17,8 +17,9 @@ export function AppFooter() {
             <Sparkles className="text-primary-foreground size-3" />
           </div>
           <span className="text-foreground font-medium">TalentIA</span>
-          <span className="hidden sm:inline">© {now.getFullYear()}</span>
-          <span className="hidden sm:inline">{f.rights}</span>
+          <span className="hidden sm:inline">
+            {f.copyrightBefore} {now.getFullYear()} {f.copyrightAfter}
+          </span>
         </div>
         <nav className="flex items-center gap-5">
           <span>{f.privacy}</span>

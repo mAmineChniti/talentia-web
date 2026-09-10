@@ -8,6 +8,10 @@ import {
   ArrowRight,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  CircleCheck,
+  CircleX,
   Clock3,
   GraduationCap,
   MapPin,
@@ -25,12 +29,17 @@ import { hasMinimumRole } from '@/lib/rbac';
 import { createTrainingSchema } from '@/lib/schemas/trainings';
 import { employeesApi } from '@/lib/services/employees';
 import { trainingsApi } from '@/lib/services/trainings';
+import { postsApi } from '@/lib/services/posts';
 import { usersApi } from '@/lib/services/users';
 import type { EmployeeResponse } from '@/lib/types/employees';
 import type { Training } from '@/lib/types/trainings';
 import type { User } from '@/lib/types/users';
-import { formatDate, fullName } from '@/lib/format';
+import { formatDate } from '@/lib/format';
 import { PageHeader } from '@/components/page-header';
+import {
+  EmployeeCombobox,
+  TrainerCombobox,
+} from '@/components/employee-combobox';
 import { StatCard } from '@/components/stat-card';
 import { StatusBadge } from '@/components/status-badge';
 import { EmptyState, ErrorState } from '@/components/states';
@@ -55,13 +64,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import {
   AlertDialog,
@@ -122,7 +124,14 @@ export default function TrainingsPage() {
           .split('{count}')
           .join(String(trainings?.length ?? 0))}
         icon={<GraduationCap className="size-6" />}
-        actions={canManage ? <AddTrainingDialog /> : undefined}
+        actions={
+          canManage ? (
+            <AddTrainingDialog
+              employees={employees.data ?? []}
+              userMap={userMap}
+            />
+          ) : undefined
+        }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -169,7 +178,14 @@ export default function TrainingsPage() {
           icon={<GraduationCap className="size-6" />}
           title={t.noTrainings}
           description={t.noTrainingsDesc}
-          action={canManage ? <AddTrainingDialog /> : undefined}
+          action={
+            canManage ? (
+              <AddTrainingDialog
+                employees={employees.data ?? []}
+                userMap={userMap}
+              />
+            ) : undefined
+          }
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -210,6 +226,7 @@ function TrainingCard({
   const fill = Math.min((participants / training.capacity) * 100, 100);
   const isFull = participants >= training.capacity;
   const isDone = training.status === 'DONE';
+  const [showEnrollments, setShowEnrollments] = React.useState(false);
 
   const removeMutation = useApiMutation<number, string>(
     (id) => trainingsApi.remove(id),
@@ -301,12 +318,33 @@ function TrainingCard({
           disabled={isFull || isDone}
         />
         {canManage && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground gap-1"
+            onClick={() => setShowEnrollments((v) => !v)}
+          >
+            <Users className="size-4" />
+            {showEnrollments ? t.hideEnrollments : t.manageEnrollments}
+            {showEnrollments ? (
+              <ChevronUp className="size-3.5" />
+            ) : (
+              <ChevronDown className="size-3.5" />
+            )}
+          </Button>
+        )}
+        {canManage && (
           <DeleteTrainingDialog
             pending={removeMutation.isPending}
             onConfirm={() => removeMutation.mutate(training.id)}
           />
         )}
       </CardFooter>
+      {canManage && showEnrollments && (
+        <div className="bg-muted/20 border-t p-4">
+          <TrainingEnrollmentsPanel trainingId={training.id} />
+        </div>
+      )}
     </Card>
   );
 }
@@ -358,6 +396,163 @@ function DeleteTrainingDialog({
   );
 }
 
+function trainingEnrollmentStatusColor(s: string) {
+  if (s === 'PENDING') return 'bg-chart-3/15 text-chart-3';
+  if (s === 'APPROVED' || s === 'REGISTERED')
+    return 'bg-chart-2/15 text-chart-2';
+  if (s === 'REJECTED') return 'bg-destructive/15 text-destructive';
+  return 'bg-muted text-muted-foreground';
+}
+
+function TrainingEnrollmentsPanel({ trainingId }: { trainingId: number }) {
+  const { dict } = useI18n();
+  const t = dict.trainings;
+  const tEmployees = dict.employees;
+  const {
+    data: enrollments,
+    loading,
+    error,
+    refetch,
+  } = useApi(['trainings.enrollments', String(trainingId)], () =>
+    trainingsApi.listEnrollments(trainingId)
+  );
+
+  const statusMutation = useApiMutation<
+    { enrollmentId: number; status: string },
+    unknown
+  >(
+    ({ enrollmentId, status }) =>
+      trainingsApi.updateEnrollmentStatus(
+        enrollmentId,
+        status as 'APPROVED' | 'REJECTED' | 'CANCELLED'
+      ),
+    {
+      invalidate: [['trainings.enrollments', String(trainingId)]],
+      onSuccess: () => {
+        refetch();
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+
+  const removeMutation = useApiMutation<number, unknown>(
+    (enrollmentId) => trainingsApi.removeEnrollment(enrollmentId),
+    {
+      invalidate: [
+        ['trainings.enrollments', String(trainingId)],
+        'trainings.list',
+      ],
+      onSuccess: () => {
+        toast.success(t.trainingRemoved);
+        refetch();
+      },
+      onError: (err) => toast.error(err.message),
+    }
+  );
+
+  if (loading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <p className="text-destructive text-xs">{error.message}</p>;
+  }
+
+  const list = enrollments ?? [];
+
+  if (list.length === 0) {
+    return (
+      <p className="text-muted-foreground py-2 text-center text-xs">
+        {t.noEnrollments}
+      </p>
+    );
+  }
+
+  const statusLabel = (s: string) => {
+    if (s === 'PENDING') return t.trainingPending;
+    if (s === 'APPROVED' || s === 'REGISTERED') return t.trainingApprovedStatus;
+    if (s === 'REJECTED') return t.trainingRejectedStatus;
+    return s;
+  };
+
+  return (
+    <div className="space-y-2">
+      {list.map((enrollment) => (
+        <div
+          key={enrollment.id}
+          className="bg-muted/40 flex items-center gap-3 rounded-xl p-3"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">
+              {enrollment.employee
+                ? `Employee #${enrollment.employee.employeeCode ?? enrollment.employee.id}`
+                : '—'}
+            </p>
+            <p className="text-muted-foreground text-xs">
+              {tEmployees.enrollmentDate}{' '}
+              {formatDate(enrollment.enrollmentDate)}
+            </p>
+          </div>
+          <span
+            className={cn(
+              'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset',
+              trainingEnrollmentStatusColor(enrollment.status)
+            )}
+          >
+            {statusLabel(enrollment.status)}
+          </span>
+          {enrollment.status === 'PENDING' && (
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-chart-2 hover:bg-chart-2/10 hover:text-chart-2"
+                disabled={statusMutation.isPending}
+                onClick={() =>
+                  statusMutation.mutate({
+                    enrollmentId: enrollment.id,
+                    status: 'APPROVED',
+                  })
+                }
+              >
+                <CircleCheck className="size-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                disabled={statusMutation.isPending}
+                onClick={() =>
+                  statusMutation.mutate({
+                    enrollmentId: enrollment.id,
+                    status: 'REJECTED',
+                  })
+                }
+              >
+                <CircleX className="size-4" />
+              </Button>
+            </div>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            disabled={removeMutation.isPending}
+            onClick={() => removeMutation.mutate(enrollment.id)}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function EnrollDialog({
   training,
   employees,
@@ -372,13 +567,16 @@ function EnrollDialog({
   const { dict } = useI18n();
   const t = dict.trainings;
   const [open, setOpen] = React.useState(false);
-  const [employeeId, setEmployeeId] = React.useState<number>(0);
+  const [employeeId, setEmployeeId] = React.useState<number | undefined>(
+    undefined
+  );
 
   const enrollMutation = useApiMutation<
     { trainingId: number; employeeId: number },
     unknown
   >(
-    ({ trainingId, employeeId }) => trainingsApi.enroll(trainingId, employeeId),
+    ({ trainingId, employeeId }) =>
+      trainingsApi.enroll(trainingId, employeeId, 'REGISTERED'),
     {
       invalidate: ['trainings.list'],
       onSuccess: () => {
@@ -411,23 +609,15 @@ function EnrollDialog({
         <div className="grid gap-4 py-1">
           <Field>
             <FieldLabel htmlFor="enroll-employee">{t.employee}</FieldLabel>
-            <Select
-              value={employeeId ? String(employeeId) : ''}
-              onValueChange={(v) => setEmployeeId(Number(v))}
-            >
-              <SelectTrigger id="enroll-employee">
-                <SelectValue placeholder={t.selectEmployee} />
-              </SelectTrigger>
-              <SelectContent>
-                {employeeOptions(employees, userMap)
-                  .filter((o) => o.active)
-                  .map((o) => (
-                    <SelectItem key={o.id} value={String(o.id)}>
-                      {o.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <EmployeeCombobox
+              employees={employees}
+              userMap={userMap}
+              value={employeeId}
+              onValueChange={setEmployeeId}
+              placeholder={t.selectEmployee}
+              requiresActive
+              id="enroll-employee"
+            />
           </Field>
           <DialogFooter className="pt-2">
             <Button
@@ -440,7 +630,10 @@ function EnrollDialog({
             </Button>
             <Button
               onClick={() =>
-                enrollMutation.mutate({ trainingId: training.id, employeeId })
+                enrollMutation.mutate({
+                  trainingId: training.id,
+                  employeeId: employeeId!,
+                })
               }
               disabled={!employeeId || enrollMutation.isPending}
             >
@@ -453,9 +646,16 @@ function EnrollDialog({
   );
 }
 
-function AddTrainingDialog() {
+function AddTrainingDialog({
+  employees,
+  userMap,
+}: {
+  employees: EmployeeResponse[];
+  userMap: Map<number, User>;
+}) {
   const { dict } = useI18n();
   const t = dict.trainings;
+  const { user } = useSession();
   const [open, setOpen] = React.useState(false);
   const form = useForm<TrainingFormValues>({
     resolver: zodResolver(createTrainingSchema(dict.validation)),
@@ -474,7 +674,18 @@ function AddTrainingDialog() {
     (body) => trainingsApi.create(body),
     {
       invalidate: ['trainings.list'],
-      onSuccess: () => {
+      onSuccess: (training) => {
+        const createPost = async () => {
+          if (user) {
+            await postsApi.create({
+              contenu: training.description || training.title,
+              typePost: 'FORMATION',
+              auteurId: user.id,
+              trainingId: training.id,
+            });
+          }
+        };
+        void createPost().catch(() => {});
         toast.success(t.successCreated);
         setOpen(false);
         form.reset();
@@ -529,10 +740,13 @@ function AddTrainingDialog() {
                     <FieldLabel htmlFor="training-trainer">
                       {t.trainer}
                     </FieldLabel>
-                    <Input
-                      {...field}
-                      id="training-trainer"
+                    <TrainerCombobox
+                      employees={employees}
+                      userMap={userMap}
+                      value={field.value}
+                      onValueChange={field.onChange}
                       placeholder={t.trainerPlaceholder}
+                      id="training-trainer"
                       aria-invalid={fieldState.invalid}
                     />
                     {fieldState.invalid && (
@@ -552,6 +766,7 @@ function AddTrainingDialog() {
                     {t.descriptionLabel}
                   </FieldLabel>
                   <Textarea
+                    className="resize-none"
                     {...field}
                     id="training-description"
                     placeholder={t.descriptionPlaceholder}
@@ -671,21 +886,4 @@ function AddTrainingDialog() {
       </DialogContent>
     </Dialog>
   );
-}
-
-function employeeOptions(
-  employees: EmployeeResponse[],
-  userMap: Map<number, User>
-) {
-  return employees
-    .filter((e) => userMap.has(e.userId))
-    .map((e) => {
-      const user = userMap.get(e.userId);
-      return {
-        id: e.id,
-        name: fullName(user?.name, user?.lastname),
-        active: e.active,
-      };
-    })
-    .toSorted((a, b) => a.name.localeCompare(b.name));
 }
