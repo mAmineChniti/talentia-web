@@ -28,7 +28,7 @@ import {
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { useI18n } from '@/components/i18n-provider';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 
 type ForgotFormValues = z.infer<ReturnType<typeof createSchema>>;
 
@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
       onSuccess: () => {
         setSent(true);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 

@@ -16,7 +16,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
@@ -292,7 +292,9 @@ export default function ContractsPage() {
                   <TableRow>
                     <TableCell colSpan={8} className="py-2.5 text-xs">
                       <span className="text-muted-foreground">
-                        {contracts?.length ?? 0} {t.contractType}
+                        {t.count
+                          .split('{count}')
+                          .join(String(contracts?.length ?? 0))}
                       </span>
                     </TableCell>
                   </TableRow>
@@ -319,10 +321,10 @@ function RowActions({ contract }: { contract: ContractResponse }) {
     {
       invalidate: ['contracts.list', 'dashboard.get'],
       onSuccess: () => {
-        toast.success(t.successDeleted);
+        toast.add({ type: 'success', description: t.successDeleted });
         setConfirmOpen(false);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -498,10 +500,10 @@ function ContractForm({
     {
       invalidate: ['contracts.list', 'dashboard.get'],
       onSuccess: () => {
-        toast.success(t.successCreated);
+        toast.add({ type: 'success', description: t.successCreated });
         onSuccess();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -521,10 +523,10 @@ function ContractForm({
     {
       invalidate: ['contracts.list', 'dashboard.get'],
       onSuccess: () => {
-        toast.success(t.successUpdated);
+        toast.add({ type: 'success', description: t.successUpdated });
         onSuccess();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 

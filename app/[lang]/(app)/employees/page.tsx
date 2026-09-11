@@ -81,7 +81,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 
 const CONTRACT_TYPES = ['CDI', 'CDD', 'Freelance', 'Internship'];
 
@@ -170,7 +170,11 @@ export default function EmployeesPage() {
           .join(String(employees?.length ?? 0))}
         icon={<Users className="size-6" />}
         actions={
-          canManage ? <AddEmployeeDialog users={users.data ?? []} /> : undefined
+          canManage ? (
+            <AddEmployeeDialog
+              users={(users.data ?? []).filter((u) => u.role === 'CANDIDATE')}
+            />
+          ) : undefined
         }
       />
 
@@ -258,7 +262,13 @@ export default function EmployeesPage() {
               action={
                 search || department !== 'all'
                   ? undefined
-                  : canManage && <AddEmployeeDialog users={users.data ?? []} />
+                  : canManage && (
+                      <AddEmployeeDialog
+                        users={(users.data ?? []).filter(
+                          (u) => u.role === 'CANDIDATE'
+                        )}
+                      />
+                    )
               }
             />
           ) : (
@@ -402,9 +412,12 @@ function RowActions({
     {
       invalidate: ['employees.list', 'dashboard.get'],
       onSuccess: () => {
-        toast.success(t.successDeleted.split('{name}').join(employeeName));
+        toast.add({
+          type: 'success',
+          description: t.successDeleted.split('{name}').join(employeeName),
+        });
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -560,11 +573,11 @@ function EnrollmentRow({
   >(({ id, score }) => trainingsApi.complete(id, score), {
     invalidate: [['trainings.employee', String(enrollment.employee?.id)]],
     onSuccess: () => {
-      toast.success(t.successCompleted);
+      toast.add({ type: 'success', description: t.successCompleted });
       setScore('');
       onChanged();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => toast.add({ type: 'error', description: err.message }),
   });
 
   return (
@@ -708,10 +721,10 @@ function EmployeeForm({
     {
       invalidate: ['employees.list', 'dashboard.get'],
       onSuccess: () => {
-        toast.success(t.successAdded);
+        toast.add({ type: 'success', description: t.successAdded });
         onSuccess();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -721,10 +734,10 @@ function EmployeeForm({
   >(({ id, body }) => employeesApi.update(id, body), {
     invalidate: ['employees.list', 'dashboard.get'],
     onSuccess: () => {
-      toast.success(t.successModified);
+      toast.add({ type: 'success', description: t.successModified });
       onSuccess();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => toast.add({ type: 'error', description: err.message }),
   });
 
   const isBusy = createMutation.isPending || updateMutation.isPending;

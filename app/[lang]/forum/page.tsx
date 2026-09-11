@@ -24,7 +24,7 @@ import {
   Users,
   Video,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 import Link from 'next/link';
 
 import { PolarAngleAxis, RadialBar, RadialBarChart } from 'recharts';
@@ -257,7 +257,7 @@ export default function ForumPage() {
   return (
     <div className="grid gap-6">
       <PageHeader
-        kicker={t.comments}
+        kicker={t.community}
         title={t.title}
         description={t.description}
         icon={<MessagesSquare className="size-6" />}
@@ -370,7 +370,7 @@ function PostCard({
   post: PostResponse;
   applied: boolean;
   onChanged: () => void;
-  userMap: Map<number, { profileImageUrl?: string }>;
+  userMap: Map<number, User>;
 }) {
   const { dict } = useI18n();
   const t = dict.forum;
@@ -388,7 +388,7 @@ function PostCard({
   const likeMutation = useApiMutation<number, PostResponse>(
     (postId) => postsApi.like(postId, user?.id ?? 0),
     {
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
       onSuccess: (data) => {
         setLikeCount(data.nombreLikes);
         setLiked(data.likedByCurrentUser);
@@ -401,10 +401,10 @@ function PostCard({
     {
       invalidate: ['posts.list'],
       onSuccess: () => {
-        toast.success(t.successDeleted);
+        toast.add({ type: 'success', description: t.successDeleted });
         onChanged();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -448,7 +448,11 @@ function PostCard({
               <p className="text-sm font-semibold">{post.trainingTitle}</p>
             </div>
             <div className="text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs">
-              {post.trainingTrainer && <span>By {post.trainingTrainer}</span>}
+              {post.trainingTrainer && (
+                <span>
+                  {t.by} {post.trainingTrainer}
+                </span>
+              )}
               {post.trainingLocation && (
                 <span className="inline-flex items-center gap-1">
                   <MapPin className="size-3" /> {post.trainingLocation}
@@ -524,7 +528,7 @@ function PostCard({
             )}
           </Button>
         )}
-        {canModerate && post.typePost === 'FORMATION' && post.trainingId && (
+        {canModerate && post.typePost === 'FORMATION' && (
           <Button
             variant="ghost"
             size="sm"
@@ -551,17 +555,20 @@ function PostCard({
         </div>
       )}
 
-      {showApplicants &&
-        canModerate &&
-        post.typePost === 'FORMATION' &&
-        post.trainingId && (
-          <div className="bg-muted/20 border-t px-6 py-4">
-            <p className="text-muted-foreground mb-3 text-xs font-medium tracking-wide uppercase">
-              {t.trainingEnrollments}
-            </p>
+      {showApplicants && canModerate && post.typePost === 'FORMATION' && (
+        <div className="bg-muted/20 border-t px-6 py-4">
+          <p className="text-muted-foreground mb-3 text-xs font-medium tracking-wide uppercase">
+            {t.trainingEnrollments}
+          </p>
+          {post.trainingId ? (
             <TrainingEnrollmentsPanel trainingId={post.trainingId} />
-          </div>
-        )}
+          ) : (
+            <p className="text-muted-foreground py-2 text-center text-xs">
+              {t.noLinkedTraining}
+            </p>
+          )}
+        </div>
+      )}
 
       {showComments && (
         <div className="bg-muted/20 border-t px-6 py-4">
@@ -601,7 +608,7 @@ function ApplyDialog({
   >((data) => applicationsApi.apply(data), {
     invalidate: ['applications.list'],
     onSuccess: () => {
-      toast.success(t.successApplied);
+      toast.add({ type: 'success', description: t.successApplied });
       setOpen(false);
       setCv(undefined);
       setMotivation('');
@@ -610,7 +617,7 @@ function ApplyDialog({
       if (err.message.includes('déjà')) {
         setError(t.alreadyApplied);
       } else {
-        toast.error(err.message);
+        toast.add({ type: 'error', description: err.message });
       }
     },
   });
@@ -735,9 +742,9 @@ function TrainingApplyButton({ post }: { post: PostResponse }) {
     {
       invalidate: ['trainings.list'],
       onSuccess: () => {
-        toast.success(t.trainingApplySuccess);
+        toast.add({ type: 'success', description: t.trainingApplySuccess });
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -808,7 +815,7 @@ function TrainingEnrollmentsPanel({ trainingId }: { trainingId: number }) {
       onSuccess: () => {
         refetch();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -817,10 +824,10 @@ function TrainingEnrollmentsPanel({ trainingId }: { trainingId: number }) {
     {
       invalidate: [['trainings.enrollments', String(trainingId)]],
       onSuccess: () => {
-        toast.success(t.trainingRemoved);
+        toast.add({ type: 'success', description: t.trainingRemoved });
         refetch();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -864,7 +871,12 @@ function TrainingEnrollmentsPanel({ trainingId }: { trainingId: number }) {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">
               {enrollment.employee
-                ? `${enrollment.employee.department} — Employee #${enrollment.employee.employeeCode ?? enrollment.employee.id}`
+                ? `${enrollment.employee.department} — ${
+                    fullName(
+                      enrollment.employee.user?.name,
+                      enrollment.employee.user?.lastname
+                    ) || enrollment.employee.employeeCode
+                  }`
                 : '—'}
             </p>
             <p className="text-muted-foreground text-xs">
@@ -977,6 +989,7 @@ function NewPostDialog({ onCreated }: { onCreated: () => void }) {
   const { dict } = useI18n();
   const t = dict.forum;
   const { user } = useSession({ redirectToLoginOnMissing: false });
+  const canManage = hasMinimumRole(user?.role, 'HR');
   const [open, setOpen] = React.useState(false);
   const [typePost, setTypePost] = React.useState<TypePost>('PUBLICITE');
   const [contenu, setContenu] = React.useState('');
@@ -989,12 +1002,19 @@ function NewPostDialog({ onCreated }: { onCreated: () => void }) {
 
   const isFormation = typePost === 'FORMATION';
 
+  const postTypeOptions: { value: TypePost; label: string }[] = canManage
+    ? (Object.keys(t.types) as TypePost[]).map((key) => ({
+        value: key,
+        label: t.types[key],
+      }))
+    : [{ value: 'PUBLICITE', label: t.types.PUBLICITE }];
+
   const createMutation = useApiMutation<PostResponse, PostResponse>(
     (body) => postsApi.create(body),
     {
       invalidate: ['posts.list'],
       onSuccess: () => {
-        toast.success(t.successCreated);
+        toast.add({ type: 'success', description: t.successCreated });
         setOpen(false);
         setContenu('');
         setTypePost('PUBLICITE');
@@ -1006,7 +1026,7 @@ function NewPostDialog({ onCreated }: { onCreated: () => void }) {
         setTrainingCapacity(20);
         onCreated();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -1024,21 +1044,27 @@ function NewPostDialog({ onCreated }: { onCreated: () => void }) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_180px]">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">{t.typeLabel}</label>
-              <Select
-                value={typePost}
-                onValueChange={(v) => setTypePost(v as TypePost)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(t.types) as TypePost[]).map((key) => (
-                    <SelectItem key={key} value={key}>
-                      {t.types[key]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {canManage ? (
+                <Select
+                  value={typePost}
+                  onValueChange={(v) => setTypePost(v as TypePost)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {postTypeOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="bg-muted/50 flex h-10 items-center rounded-md border px-3 text-sm">
+                  {t.types.PUBLICITE}
+                </div>
+              )}
             </div>
           </div>
           <div className="space-y-1.5">
@@ -1198,7 +1224,7 @@ function CommentsList({ postId }: { postId: number }) {
       setText('');
       refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => toast.add({ type: 'error', description: err.message }),
   });
 
   const deleteMutation = useApiMutation<number, string>(
@@ -1206,10 +1232,10 @@ function CommentsList({ postId }: { postId: number }) {
     {
       invalidate: [['posts.comments', String(postId)]],
       onSuccess: () => {
-        toast.success(t.commentDeleted);
+        toast.add({ type: 'success', description: t.commentDeleted });
         refetch();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -1302,7 +1328,9 @@ function CommentsList({ postId }: { postId: number }) {
               className="text-muted-foreground hover:text-primary w-full"
               onClick={() => setShowAll(true)}
             >
-              Load more ({(comments ?? []).length - 2} more)
+              {t.loadMoreCount
+                .split('{count}')
+                .join(String((comments ?? []).length - 2))}
             </Button>
           )}
         </div>
@@ -1440,10 +1468,10 @@ function ScheduleInterviewInline({
     {
       invalidate: ['interviews.list', 'dashboard.get'],
       onSuccess: () => {
-        toast.success(t.successScheduled);
+        toast.add({ type: 'success', description: t.successScheduled });
         onClose();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 

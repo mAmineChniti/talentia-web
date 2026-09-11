@@ -1,3 +1,5 @@
+import type { User } from './users';
+
 export interface EmployeeRequest {
   userId: number;
   department: string;
@@ -16,4 +18,5 @@ export interface EmployeeResponse {
   contractType: string;
   salary: number;
   active: boolean;
+  user?: User;
 }

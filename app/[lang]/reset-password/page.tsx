@@ -29,7 +29,7 @@ import {
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { useI18n } from '@/components/i18n-provider';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 
 type ResetFormValues = z.infer<ReturnType<typeof createSchema>>;
 
@@ -84,10 +84,10 @@ function ResetPasswordInner() {
         if (ok) {
           setActiveToken(code);
         } else {
-          toast.error(t.invalidToken);
+          toast.add({ type: 'error', description: t.invalidToken });
         }
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -109,7 +109,7 @@ function ResetPasswordInner() {
       onSuccess: () => {
         setDone(true);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 

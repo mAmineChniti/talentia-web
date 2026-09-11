@@ -53,7 +53,7 @@ export function DatePicker({
 }) {
   const { lang, dir } = useI18n();
   const [open, setOpen] = React.useState(false);
-  const date = value ? new Date(value) : undefined;
+  const date = value ? new Date(value + 'T00:00:00') : undefined;
 
   const dateFnsLocale = dateFnsLocales[lang];
   const dayPickerLocale = dayPickerLocales[lang];
@@ -216,7 +216,7 @@ export function DateTimePicker({
 }) {
   const { lang, dir } = useI18n();
   const [open, setOpen] = React.useState(false);
-  const date = value ? new Date(value) : undefined;
+  const date = value ? new Date(value + 'T00:00:00') : undefined;
 
   const dateFnsLocale = dateFnsLocales[lang];
   const dayPickerLocale = dayPickerLocales[lang];

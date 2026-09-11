@@ -10,7 +10,7 @@ const ROLE_HIERARCHY: Record<Role, number> = {
 const ROUTE_ROLES: Record<string, Role[]> = {
   dashboard: ['EMPLOYEE', 'HR', 'ADMIN'],
   employees: ['HR', 'ADMIN'],
-  attendance: ['HR', 'ADMIN'],
+  attendance: ['EMPLOYEE', 'HR', 'ADMIN'],
   leaves: ['EMPLOYEE', 'HR', 'ADMIN'],
   contracts: ['HR', 'ADMIN'],
   payroll: ['ADMIN'],

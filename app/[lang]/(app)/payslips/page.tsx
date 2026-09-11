@@ -9,7 +9,7 @@ import {
   Sparkles,
   Wallet,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
@@ -290,13 +290,16 @@ function GeneratePayslipDialog({
     {
       invalidate: ['payslips.list'],
       onSuccess: (data) => {
-        toast.success(
-          t.successGenerated.split('{name}').join(data.employeeName)
-        );
+        toast.add({
+          type: 'success',
+          description: t.successGenerated
+            .split('{name}')
+            .join(data.employeeName),
+        });
         setOpen(false);
         setPayrollId(undefined);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 

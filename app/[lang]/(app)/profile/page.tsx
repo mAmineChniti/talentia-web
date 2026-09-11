@@ -19,7 +19,7 @@ import {
   ShieldCheck,
   UserRound,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 
 import { useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
@@ -66,10 +66,10 @@ export default function ProfilePage() {
     {
       invalidate: [['session.user']],
       onSuccess: () => {
-        toast.success(t.saved);
+        toast.add({ type: 'success', description: t.saved });
         form.resetField('newPassword');
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -77,8 +77,9 @@ export default function ProfilePage() {
     (image) => usersApi.uploadPhoto(user?.id as number, image),
     {
       invalidate: [['session.user']],
-      onSuccess: () => toast.success(t.photoUpdated),
-      onError: (err) => toast.error(err.message),
+      onSuccess: () =>
+        toast.add({ type: 'success', description: t.photoUpdated }),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 

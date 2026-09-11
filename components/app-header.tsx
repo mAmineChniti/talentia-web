@@ -23,7 +23,7 @@ import { useApiMutation } from '@/hooks/use-api';
 import { authApi } from '@/lib/services/auth';
 import { fullName, initials } from '@/lib/format';
 import { useI18n } from '@/components/i18n-provider';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 import { deleteSessionCookie } from '@/actions/cookies';
 
 export function AppHeader({
@@ -68,14 +68,14 @@ export function AppHeader({
     onSuccess: () => {
       void (async () => {
         await deleteSessionCookie();
-        toast.success(h.logoutSuccess);
+        toast.add({ type: 'success', description: h.logoutSuccess });
         router.push(`/${lang}/login`);
       })();
     },
     onError: () => {
       void (async () => {
         await deleteSessionCookie();
-        toast.success(h.logoutSuccess);
+        toast.add({ type: 'success', description: h.logoutSuccess });
         router.push(`/${lang}/login`);
       })();
     },

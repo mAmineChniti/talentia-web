@@ -39,7 +39,7 @@ import {
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { useI18n } from '@/components/i18n-provider';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 import { setSessionCookie } from '@/actions/cookies';
 
 type RegisterFormValues = z.infer<ReturnType<typeof createRegisterSchema>>;
@@ -82,12 +82,15 @@ export default function RegisterPage() {
             email: res.email,
             role: res.role,
           });
-          toast.success(t.success);
+          toast.add({ type: 'success', description: t.success });
           router.replace(`/${lang}/dashboard`);
         })();
       },
       onError: (error) => {
-        toast.error(Error.isError(error) ? error.message : t.createError);
+        toast.add({
+          type: 'error',
+          description: Error.isError(error) ? error.message : t.createError,
+        });
       },
     }
   );

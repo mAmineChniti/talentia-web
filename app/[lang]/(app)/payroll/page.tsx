@@ -12,7 +12,7 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
@@ -364,13 +364,16 @@ function GenerateAllDialog() {
     {
       invalidate: ['payroll.list', 'dashboard.get'],
       onSuccess: (data) => {
-        toast.success(
-          t.successGenerated.split('{count}').join(String(data.length))
-        );
+        toast.add({
+          type: 'success',
+          description: t.successGenerated
+            .split('{count}')
+            .join(String(data.length)),
+        });
         setOpen(false);
         form.reset();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -483,11 +486,11 @@ function AddPayrollDialog({
     {
       invalidate: ['payroll.list', 'dashboard.get'],
       onSuccess: () => {
-        toast.success(t.successCreated);
+        toast.add({ type: 'success', description: t.successCreated });
         setOpen(false);
         form.reset();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 

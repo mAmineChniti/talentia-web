@@ -15,7 +15,7 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
@@ -87,14 +87,29 @@ type LeaveFormValues = z.infer<ReturnType<typeof createLeaveSchema>>;
 export default function LeavesPage() {
   const { dict } = useI18n();
   const t = dict.leaves;
+  const { user } = useSession();
+  const canManage = hasMinimumRole(user?.role, 'HR');
   const [tab, setTab] = React.useState('all');
+
+  const employees = useApi('employees.list', () => employeesApi.list());
+
+  const myEmployee = canManage
+    ? undefined
+    : employees.data?.find((e) => e.userId === user?.id);
 
   const {
     data: leaves,
     loading,
     error,
     refetch,
-  } = useApi('leaves.list', () => leavesApi.list());
+  } = useApi(
+    canManage
+      ? ['leaves.list']
+      : ['leaves.employee', String(myEmployee?.id ?? '')],
+    () =>
+      canManage ? leavesApi.list() : leavesApi.listByEmployee(myEmployee!.id),
+    { enabled: canManage || myEmployee?.id !== undefined }
+  );
 
   const pending = (leaves ?? []).filter((l) => l.status === 'PENDING').length;
   const approved = (leaves ?? []).filter((l) => l.status === 'APPROVED').length;
@@ -120,7 +135,7 @@ export default function LeavesPage() {
       <PageHeader
         kicker={t.all}
         title={t.title}
-        description={t.description}
+        description={canManage ? t.description : t.myDescription}
         icon={<CalendarDays className="size-6" />}
         actions={<RequestLeaveDialog />}
       />
@@ -220,7 +235,7 @@ export default function LeavesPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/40 hover:bg-muted/40">
-                    <TableHead>{t.employee}</TableHead>
+                    {canManage && <TableHead>{t.employee}</TableHead>}
                     <TableHead>{t.type}</TableHead>
                     <TableHead>{t.from}</TableHead>
                     <TableHead>{t.to}</TableHead>
@@ -232,14 +247,23 @@ export default function LeavesPage() {
                 </TableHeader>
                 <TableBody>
                   {filtered.map((leave) => {
-                    return <LeaveRow key={leave.id} leave={leave} />;
+                    return (
+                      <LeaveRow
+                        key={leave.id}
+                        leave={leave}
+                        canManage={canManage}
+                      />
+                    );
                   })}
                 </TableBody>
                 <TableFooter className="bg-muted/30">
                   <TableRow>
-                    <TableCell colSpan={8} className="py-2.5 text-xs">
+                    <TableCell
+                      colSpan={canManage ? 8 : 7}
+                      className="py-2.5 text-xs"
+                    >
                       <span className="text-muted-foreground">
-                        {filtered.length} {t.all}
+                        {t.total.split('{count}').join(String(filtered.length))}
                       </span>
                     </TableCell>
                   </TableRow>
@@ -253,40 +277,48 @@ export default function LeavesPage() {
   );
 }
 
-function LeaveRow({ leave }: { leave: LeaveResponse }) {
+function LeaveRow({
+  leave,
+  canManage,
+}: {
+  leave: LeaveResponse;
+  canManage: boolean;
+}) {
   const { dict } = useI18n();
   const t = dict.leaves;
-  const { userId, user } = useSession();
-  const canManage = hasMinimumRole(user?.role, 'HR');
+  const { userId } = useSession();
 
   const approveMutation = useApiMutation<
     { id: number; userId: number },
     LeaveResponse
   >(({ id, userId }) => leavesApi.approve(id, userId), {
     invalidate: ['leaves.list', 'dashboard.get'],
-    onSuccess: () => toast.success(t.successApproved),
-    onError: (err) => toast.error(err.message),
+    onSuccess: () =>
+      toast.add({ type: 'success', description: t.successApproved }),
+    onError: (err) => toast.add({ type: 'error', description: err.message }),
   });
   const rejectMutation = useApiMutation<
     { id: number; userId: number },
     LeaveResponse
   >(({ id, userId }) => leavesApi.reject(id, userId), {
     invalidate: ['leaves.list', 'dashboard.get'],
-    onSuccess: () => toast.success(t.successRejected),
-    onError: (err) => toast.error(err.message),
+    onSuccess: () =>
+      toast.add({ type: 'success', description: t.successRejected }),
+    onError: (err) => toast.add({ type: 'error', description: err.message }),
   });
   const cancelMutation = useApiMutation<number, LeaveResponse>(
     (id) => leavesApi.cancel(id),
     {
       invalidate: ['leaves.list', 'dashboard.get'],
-      onSuccess: () => toast.success(t.successCancelled),
-      onError: (err) => toast.error(err.message),
+      onSuccess: () =>
+        toast.add({ type: 'success', description: t.successCancelled }),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
   function review(action: 'approve' | 'reject', id: number) {
     if (!userId) {
-      toast.error(t.loginRequired);
+      toast.add({ type: 'error', description: t.loginRequired });
       return;
     }
     const vars = { id, userId };
@@ -298,18 +330,20 @@ function LeaveRow({ leave }: { leave: LeaveResponse }) {
 
   return (
     <TableRow className="group">
-      <TableCell>
-        <div className="flex items-center gap-3">
-          <Avatar className="ring-primary/10 size-9 ring-1">
-            <AvatarFallback>
-              {leave.employeeName?.slice(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <span className="truncate text-sm font-medium">
-            {leave.employeeName}
-          </span>
-        </div>
-      </TableCell>
+      {canManage && (
+        <TableCell>
+          <div className="flex items-center gap-3">
+            <Avatar className="ring-primary/10 size-9 ring-1">
+              <AvatarFallback>
+                {leave.employeeName?.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="truncate text-sm font-medium">
+              {leave.employeeName}
+            </span>
+          </div>
+        </TableCell>
+      )}
       <TableCell>
         <span
           className={cn(
@@ -442,11 +476,11 @@ function RequestLeaveDialog() {
     {
       invalidate: ['leaves.list', 'dashboard.get'],
       onSuccess: () => {
-        toast.success(t.successSent);
+        toast.add({ type: 'success', description: t.successSent });
         setOpen(false);
         form.reset();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
