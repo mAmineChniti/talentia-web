@@ -1,10 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import type * as z from 'zod';
 import {
   AlarmClock,
   Clock,
@@ -15,41 +11,28 @@ import {
   Trash2,
   UserCheck,
   Users,
+  XCircle,
 } from 'lucide-react';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
 import { useSession } from '@/hooks/use-session';
 import { hasMinimumRole } from '@/lib/rbac';
-import { createScanSchema } from '@/lib/schemas/attendance';
 import { attendanceApi } from '@/lib/services/attendance';
 import { employeesApi } from '@/lib/services/employees';
+import { usersApi } from '@/lib/services/users';
+import type { User } from '@/lib/types/users';
 import type { Attendance } from '@/lib/types/attendance';
 import { formatDate, formatTime, fullName, initials } from '@/lib/format';
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
 import { StatusBadge } from '@/components/status-badge';
 import { EmptyState, ErrorState } from '@/components/states';
+import { ScanDialog } from '@/components/scan-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DatePicker } from '@/components/ui/date-picker';
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from '@/components/ui/field';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -60,9 +43,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { toast } from 'sonner';
-
-type ScanFormValues = z.infer<ReturnType<typeof createScanSchema>>;
+import { toast } from '@/components/ui/toast';
 
 function todayISO() {
   const now = new Date();
@@ -83,20 +64,84 @@ export default function AttendancePage() {
   const canManage = hasMinimumRole(user?.role, 'HR');
   const [date, setDate] = React.useState(todayISO);
 
+  const employees = useApi('employees.list', () => employeesApi.list());
+  const { data: users } = useApi('users.list', () => usersApi.list());
+  const userMap = React.useMemo(() => {
+    const m = new Map<number, User>();
+    if (users) {
+      for (const u of users) m.set(u.id, u);
+    }
+    return m;
+  }, [users]);
+
+  const activeEmployees = React.useMemo(() => {
+    return (employees.data ?? []).filter((e) => e.active);
+  }, [employees.data]);
+
+  const myEmployee = canManage
+    ? undefined
+    : activeEmployees.find((e) => e.userId === user?.id);
+
   const {
     data: records,
     loading,
     error,
     refetch,
-  } = useApi(['attendance', 'date', date], () =>
-    attendanceApi.listByDate(date)
+  } = useApi(
+    canManage
+      ? ['attendance', 'date', date]
+      : ['attendance', 'employee', String(myEmployee?.id ?? ''), date],
+    () =>
+      canManage
+        ? attendanceApi.listByDate(date)
+        : attendanceApi.listByEmployeeAndDate(myEmployee!.id, date),
+    { enabled: canManage || myEmployee?.id !== undefined }
   );
-  const employees = useApi('employees.list', () => employeesApi.list());
 
-  const employeesCount = employees.data?.length ?? 0;
+  const tableRows = React.useMemo(() => {
+    if (!canManage) return records ?? [];
+    const recordByEmployeeId = new Map<number, Attendance>();
+    const recordList = records ?? [];
+    for (const r of recordList) {
+      if (r.employee?.id !== undefined)
+        recordByEmployeeId.set(r.employee.id, r);
+    }
+    return activeEmployees.map((emp) => {
+      const existing = recordByEmployeeId.get(emp.id);
+      if (existing) return existing;
+      const empUser = userMap.get(emp.userId);
+      return {
+        id: -emp.id,
+        date: date,
+        employee: {
+          id: emp.id,
+          user: empUser
+            ? {
+                id: empUser.id,
+                name: empUser.name,
+                lastname: empUser.lastname,
+                profileImageUrl: empUser.profileImageUrl,
+              }
+            : undefined,
+          employeeCode: emp.employeeCode,
+          position: emp.position,
+        },
+        status: 'ABSENT' as const,
+        checkIn: undefined,
+        checkOut: undefined,
+        workedHours: undefined,
+        delayMinutes: undefined,
+      } satisfies Partial<Attendance> as Attendance;
+    });
+  }, [canManage, records, activeEmployees, date, userMap]);
+
+  const employeesCount = canManage ? activeEmployees.length : 1;
   const present = (records ?? []).filter((r) => r.status === 'PRESENT').length;
   const late = (records ?? []).filter((r) => r.status === 'RETARD').length;
-  const checkedIn = records?.length ?? 0;
+  const absent = canManage
+    ? Math.max(employeesCount - present - late, 0)
+    : (records ?? []).filter((r) => r.status === 'ABSENT').length;
+  const checkedIn = present + late;
   const totalWorked = (records ?? []).reduce(
     (sum, r) => sum + (r.workedHours ?? 0),
     0
@@ -109,7 +154,9 @@ export default function AttendancePage() {
       <PageHeader
         kicker={formatDate(date)}
         title={t.title}
-        description={t.date.split('{date}').join(formatDate(date))}
+        description={(canManage ? t.date : t.myDate)
+          .split('{date}')
+          .join(formatDate(date))}
         icon={<Fingerprint className="size-6" />}
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -119,12 +166,12 @@ export default function AttendancePage() {
               className="w-fit"
               aria-label={t.selectDate}
             />
-            {canManage && <ScanDialog onScanned={refetch} />}
+            <ScanDialog onScanned={refetch} />
           </div>
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           label={t.present}
           value={present}
@@ -135,9 +182,16 @@ export default function AttendancePage() {
         <StatCard
           label={t.late}
           value={late}
-          hint={t.lateRecorded}
+          hint={canManage ? t.lateToday : t.lateRecorded}
           icon={<AlarmClock className="size-5" />}
           accent="warning"
+        />
+        <StatCard
+          label={t.absent}
+          value={absent}
+          hint={canManage ? t.absentToday : t.absentRecorded}
+          icon={<XCircle className="size-5" />}
+          accent="danger"
         />
         <StatCard
           label={t.hoursWorked}
@@ -149,7 +203,7 @@ export default function AttendancePage() {
         <StatCard
           label={t.scans}
           value={`${checkedIn}/${employeesCount || '—'}`}
-          hint={t.employeesScanned}
+          hint={canManage ? t.employeesScanned : t.myScans}
           icon={<Users className="size-5" />}
         />
       </div>
@@ -164,7 +218,7 @@ export default function AttendancePage() {
                 return <Skeleton key={i} className="h-14 w-full" />;
               })}
             </div>
-          ) : (records ?? []).length === 0 ? (
+          ) : tableRows.length === 0 ? (
             <EmptyState
               icon={<Fingerprint className="size-6" />}
               title={t.noScans}
@@ -176,7 +230,8 @@ export default function AttendancePage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/40 hover:bg-muted/40">
-                    <TableHead>{t.employee}</TableHead>
+                    <TableHead>{t.dateColumn}</TableHead>
+                    {canManage && <TableHead>{t.employee}</TableHead>}
                     <TableHead>{t.checkIn}</TableHead>
                     <TableHead>{t.checkOut}</TableHead>
                     <TableHead>{t.work}</TableHead>
@@ -186,11 +241,12 @@ export default function AttendancePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(records ?? []).map((record) => {
+                  {tableRows.map((record) => {
                     return (
                       <AttendanceRow
                         key={record.id}
                         record={record}
+                        canManage={canManage}
                         onDeleted={refetch}
                       />
                     );
@@ -198,9 +254,15 @@ export default function AttendancePage() {
                 </TableBody>
                 <TableFooter className="bg-muted/30">
                   <TableRow>
-                    <TableCell colSpan={7} className="py-2.5 text-xs">
+                    <TableCell
+                      colSpan={canManage ? 8 : 7}
+                      className="py-2.5 text-xs"
+                    >
                       <span className="text-muted-foreground">
-                        {checkedIn} {t.employeesScanned} ·{' '}
+                        {canManage
+                          ? `${checkedIn} ${t.employeesScanned}`
+                          : `${checkedIn} ${t.scans}`}
+                        {' · '}
                         {hoursLabel(totalWorked)} {t.totalDay}
                       </span>
                     </TableCell>
@@ -217,50 +279,55 @@ export default function AttendancePage() {
 
 function AttendanceRow({
   record,
+  canManage,
   onDeleted,
 }: {
   record: Attendance;
+  canManage: boolean;
   onDeleted: () => void;
 }) {
   const { dict } = useI18n();
   const t = dict.attendance;
   const employee = record.employee;
   const employeeUser = employee?.user;
-  const { user: sessionUser } = useSession();
-  const canManage = hasMinimumRole(sessionUser?.role, 'HR');
 
   const removeMutation = useApiMutation<number, string>(
     (id) => attendanceApi.remove(id),
     {
       invalidate: [['attendance', 'date'], 'dashboard.get'],
       onSuccess: () => {
-        toast.success(t.successDeleted);
+        toast.add({ type: 'success', description: t.successDeleted });
         onDeleted();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
   return (
     <TableRow className="group">
       <TableCell>
-        <div className="flex items-center gap-3">
-          <Avatar className="ring-primary/10 size-9 ring-1">
-            <AvatarImage src={employeeUser?.profileImageUrl} />
-            <AvatarFallback>
-              {initials(employeeUser?.name, employeeUser?.lastname)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">
-              {fullName(employeeUser?.name, employeeUser?.lastname)}
-            </p>
-            <p className="text-muted-foreground truncate text-xs">
-              {employee?.position || employee?.employeeCode || '—'}
-            </p>
-          </div>
-        </div>
+        <span className="text-sm">{formatDate(record.date)}</span>
       </TableCell>
+      {canManage && (
+        <TableCell>
+          <div className="flex items-center gap-3">
+            <Avatar className="ring-primary/10 size-9 ring-1">
+              <AvatarImage src={employeeUser?.profileImageUrl} />
+              <AvatarFallback>
+                {initials(employeeUser?.name, employeeUser?.lastname)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">
+                {fullName(employeeUser?.name, employeeUser?.lastname)}
+              </p>
+              <p className="text-muted-foreground truncate text-xs">
+                {employee?.position || employee?.employeeCode || '—'}
+              </p>
+            </div>
+          </div>
+        </TableCell>
+      )}
       <TableCell>
         <span className="bg-muted/60 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-xs">
           <LogIn className="text-chart-2 size-3" />
@@ -298,7 +365,7 @@ function AttendanceRow({
         <StatusBadge status={record.status} />
       </TableCell>
       <TableCell>
-        {canManage && (
+        {canManage && record.id > 0 && (
           <Button
             variant="ghost"
             size="icon-sm"
@@ -312,220 +379,5 @@ function AttendanceRow({
         )}
       </TableCell>
     </TableRow>
-  );
-}
-
-function ScanDialog({ onScanned }: { onScanned: () => void }) {
-  const { dict } = useI18n();
-  const t = dict.attendance;
-  const [open, setOpen] = React.useState(false);
-  const [manualMode, setManualMode] = React.useState(false);
-  const [cameraError, setCameraError] = React.useState<string | undefined>(
-    undefined
-  );
-  const scannerRef = React.useRef<Html5Qrcode | undefined>(undefined);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const scannedRef = React.useRef(false);
-
-  const form = useForm<ScanFormValues>({
-    resolver: zodResolver(createScanSchema(dict.validation)),
-    defaultValues: { qrCode: '' },
-  });
-
-  const scanMutation = useApiMutation<string, Attendance>(
-    (qrCode) => attendanceApi.scan(qrCode),
-    {
-      invalidate: [['attendance', 'date'], 'dashboard.get'],
-      onSuccess: (data) => {
-        const employeeName = fullName(
-          data.employee?.user?.name,
-          data.employee?.user?.lastname
-        );
-        if (data.checkOut) {
-          toast.success(
-            t.clockOutSuccess
-              .split('{name}')
-              .join(employeeName)
-              .split('{time}')
-              .join(formatTime(data.checkOut))
-          );
-        } else {
-          toast.success(
-            t.clockInSuccess
-              .split('{name}')
-              .join(employeeName)
-              .split('{time}')
-              .join(formatTime(data.checkIn))
-          );
-        }
-        form.reset({ qrCode: '' });
-        scannedRef.current = false;
-        onScanned();
-      },
-      onError: (err) => {
-        toast.error(err.message);
-        scannedRef.current = false;
-      },
-    }
-  );
-
-  const handleQrCode = React.useCallback(
-    (qrCode: string) => {
-      if (scannedRef.current || scanMutation.isPending) return;
-      scannedRef.current = true;
-      scanMutation.mutate(qrCode);
-    },
-    [scanMutation]
-  );
-
-  const stopCamera = React.useCallback(async () => {
-    if (!scannerRef.current) {
-      return;
-    }
-
-    try {
-      await scannerRef.current.stop();
-    } catch {
-      // already stopped
-    }
-    scannerRef.current = undefined;
-  }, []);
-
-  const startCamera = React.useCallback(async () => {
-    if (!containerRef.current) return;
-    setCameraError(undefined);
-
-    try {
-      const scanner = new Html5Qrcode('qr-scanner-container');
-      scannerRef.current = scanner;
-
-      await scanner.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => handleQrCode(decodedText),
-        () => {}
-      );
-    } catch (error) {
-      setCameraError(
-        Error.isError(error) ? error.message : 'Camera access denied'
-      );
-      setManualMode(true);
-    }
-  }, [handleQrCode]);
-
-  const handleOpenChange = React.useCallback(
-    async (isOpen: boolean) => {
-      setOpen(isOpen);
-      if (isOpen) {
-        scannedRef.current = false;
-        setManualMode(false);
-        setCameraError(undefined);
-        if (!manualMode) {
-          setTimeout(() => {
-            void startCamera();
-          }, 100);
-        }
-      } else {
-        await stopCamera();
-        form.reset({ qrCode: '' });
-      }
-    },
-    [form, manualMode, startCamera, stopCamera]
-  );
-
-  const switchToManual = React.useCallback(async () => {
-    await stopCamera();
-    setManualMode(true);
-  }, [stopCamera]);
-
-  const switchToCamera = React.useCallback(() => {
-    setManualMode(false);
-    setCameraError(undefined);
-    setTimeout(() => {
-      void startCamera();
-    }, 100);
-  }, [startCamera]);
-
-  React.useEffect(() => {
-    return () => {
-      void stopCamera();
-    };
-  }, [stopCamera]);
-
-  return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger render={<Button />}>
-        <Fingerprint /> {t.scanQr}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{t.scanDialogTitle}</DialogTitle>
-          <DialogDescription>{t.scanDialogDesc}</DialogDescription>
-        </DialogHeader>
-
-        {manualMode ? (
-          <form
-            onSubmit={form.handleSubmit((values) =>
-              scanMutation.mutate(values.qrCode)
-            )}
-            className="grid gap-4 py-1"
-          >
-            <FieldGroup>
-              <Controller
-                control={form.control}
-                name="qrCode"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="scan-code">{t.qrCode}</FieldLabel>
-                    <Input
-                      {...field}
-                      id="scan-code"
-                      placeholder={t.qrCodePlaceholder}
-                      autoFocus
-                      aria-invalid={fieldState.invalid}
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-            </FieldGroup>
-            <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={switchToCamera}>
-                {t.scanDialogTitle}
-              </Button>
-              <Button type="submit" disabled={scanMutation.isPending}>
-                {scanMutation.isPending ? t.recording : t.clockIn}
-              </Button>
-            </DialogFooter>
-          </form>
-        ) : (
-          <div className="grid gap-4 py-1">
-            {cameraError ? (
-              <p className="text-muted-foreground py-8 text-center text-sm">
-                {cameraError}
-              </p>
-            ) : (
-              <div
-                id="qr-scanner-container"
-                ref={containerRef}
-                className="relative w-full overflow-hidden rounded-lg [&>video]:w-full [&>video]:rounded-lg"
-              />
-            )}
-            <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={switchToManual}>
-                {t.typeCode}
-              </Button>
-            </DialogFooter>
-            {scanMutation.isPending && (
-              <p className="text-muted-foreground text-center text-sm">
-                {t.recording}
-              </p>
-            )}
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
   );
 }

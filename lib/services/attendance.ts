@@ -12,6 +12,8 @@ export const attendanceApi = {
   get: (id: number) => request<Attendance>(`/attendance/${id}`),
   listByEmployee: (employeeId: number) =>
     request<Attendance[]>(`/attendance/employee/${employeeId}`),
+  listByEmployeeAndDate: (employeeId: number, date: string) =>
+    request<Attendance[]>(`/attendance/employee/${employeeId}/date/${date}`),
   listByDate: (date: string) =>
     request<Attendance[]>(`/attendance/date/${date}`),
   remove: (id: number) =>

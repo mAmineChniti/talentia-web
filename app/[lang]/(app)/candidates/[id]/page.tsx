@@ -22,7 +22,7 @@ import {
   Star,
   Video,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
@@ -168,11 +168,11 @@ function AppCard({
     {
       invalidate: ['interviews.list', 'dashboard.get'],
       onSuccess: () => {
-        toast.success(t.successScheduled);
+        toast.add({ type: 'success', description: t.successScheduled });
         setScheduleOpen(false);
         scheduleForm.reset();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 

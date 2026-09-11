@@ -5,6 +5,8 @@ import { request } from './http';
 export const employeesApi = {
   list: () => request<EmployeeResponse[]>('/employees'),
   get: (id: number) => request<EmployeeResponse>(`/employees/${id}`),
+  getByUserId: (userId: number) =>
+    request<EmployeeResponse>(`/employees/user/${userId}`),
   create: (body: EmployeeRequest) =>
     request<EmployeeResponse>('/employees', { method: 'POST', json: body }),
   update: (id: number, body: EmployeeRequest) => {

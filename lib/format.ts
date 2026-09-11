@@ -59,7 +59,7 @@ export function formatDate(
   locale: Locale = formatState.locale
 ) {
   if (!value) return '—';
-  const d = new Date(value);
+  const d = new Date(value.includes('T') ? value : value + 'T00:00:00');
   if (Number.isNaN(d.getTime())) return value;
   return getDate(locale).format(d);
 }
@@ -85,7 +85,7 @@ export function formatDateTime(
   locale: Locale = formatState.locale
 ) {
   if (!value) return '—';
-  const d = new Date(value);
+  const d = new Date(value.includes('T') ? value : value + 'T00:00:00');
   if (Number.isNaN(d.getTime())) return value;
   return getDateTime(locale).format(d);
 }

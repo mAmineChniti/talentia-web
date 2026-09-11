@@ -6,7 +6,6 @@ import {
   BriefcaseBusiness,
   CalendarDays,
   CalendarPlus,
-  Fingerprint,
   GraduationCap,
   HandCoins,
   MapPin,
@@ -17,7 +16,7 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 
 import Link from 'next/link';
 
@@ -44,6 +43,7 @@ import {
 import { StatCard } from '@/components/stat-card';
 import { StatusBadge } from '@/components/status-badge';
 import { ErrorState } from '@/components/states';
+import { ScanDialog } from '@/components/scan-dialog';
 import {
   Card,
   CardContent,
@@ -391,7 +391,7 @@ export default function DashboardPage() {
   }, [myApprovedLeaves, dict.leaves.types]);
 
   const leaveTypeConfig = {
-    days: { label: t.leavesByTypeDesc, color: 'var(--chart-1)' },
+    days: { label: t.leavesByType, color: 'var(--chart-1)' },
   } satisfies ChartConfig;
 
   const plannedInterviews = React.useMemo(() => {
@@ -503,25 +503,21 @@ export default function DashboardPage() {
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button
-                render={<Link href="/leaves" />}
-                nativeButton={false}
-                size="sm"
-                variant="secondary"
-                className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-sm"
-              >
-                <CalendarPlus /> {dict.leaves.newRequest}
-              </Button>
-              {canManage && (
+              {isEmployee && (
                 <Button
-                  render={<Link href="/attendance" />}
+                  render={<Link href="/leaves" />}
                   nativeButton={false}
                   size="sm"
-                  className="bg-primary-foreground/15 text-primary-foreground ring-primary-foreground/25 hover:bg-primary-foreground/25 ring-1 ring-inset"
+                  variant="secondary"
+                  className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-sm"
                 >
-                  <Fingerprint /> {dict.attendance.scanQr}
+                  <CalendarPlus /> {dict.leaves.newRequest}
                 </Button>
               )}
+              <ScanDialog
+                size="sm"
+                buttonClassName="bg-primary-foreground/15 text-primary-foreground ring-primary-foreground/25 hover:bg-primary-foreground/25 ring-1 ring-inset"
+              />
               {canManage && (
                 <Button
                   render={<Link href="/employees" />}
@@ -1073,7 +1069,7 @@ export default function DashboardPage() {
                     <CardTitle className="font-heading text-base">
                       {t.upcomingLeaves}
                     </CardTitle>
-                    <CardDescription>{t.leavesByTypeDesc}</CardDescription>
+                    <CardDescription>{t.upcomingLeavesDesc}</CardDescription>
                   </div>
                   <Button
                     render={<Link href="/leaves" />}
@@ -1373,16 +1369,18 @@ function LeaveRequestRow({ leave }: { leave: LeaveResponse }) {
     LeaveResponse
   >(({ id, userId }) => leavesApi.approve(id, userId), {
     invalidate: ['leaves.list', 'dashboard.get'],
-    onSuccess: () => toast.success(lt.successApproved),
-    onError: (err) => toast.error(err.message),
+    onSuccess: () =>
+      toast.add({ type: 'success', description: lt.successApproved }),
+    onError: (err) => toast.add({ type: 'error', description: err.message }),
   });
   const rejectMutation = useApiMutation<
     { id: number; userId: number },
     LeaveResponse
   >(({ id, userId }) => leavesApi.reject(id, userId), {
     invalidate: ['leaves.list', 'dashboard.get'],
-    onSuccess: () => toast.success(lt.successRejected),
-    onError: (err) => toast.error(err.message),
+    onSuccess: () =>
+      toast.add({ type: 'success', description: lt.successRejected }),
+    onError: (err) => toast.add({ type: 'error', description: err.message }),
   });
 
   return (

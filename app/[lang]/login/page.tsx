@@ -39,7 +39,7 @@ import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { useI18n } from '@/components/i18n-provider';
 import { setSessionCookie } from '@/actions/cookies';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 
 type LoginFormValues = z.infer<ReturnType<typeof createLoginSchema>>;
 
@@ -61,7 +61,10 @@ export default function LoginPage() {
       invalidate: [['session.me'], ['session.user']],
       onSuccess: (res) => {
         void (async () => {
-          toast.success(t.welcome.split('{name}').join(res.name));
+          toast.add({
+            type: 'success',
+            description: t.welcome.split('{name}').join(res.name),
+          });
 
           await setSessionCookie({
             id: res.id,
@@ -79,7 +82,7 @@ export default function LoginPage() {
           router.push(target);
         })();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 

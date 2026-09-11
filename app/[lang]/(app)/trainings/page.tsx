@@ -20,7 +20,7 @@ import {
   UserPlus,
   Users,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
@@ -34,7 +34,7 @@ import { usersApi } from '@/lib/services/users';
 import type { EmployeeResponse } from '@/lib/types/employees';
 import type { Training } from '@/lib/types/trainings';
 import type { User } from '@/lib/types/users';
-import { formatDate } from '@/lib/format';
+import { formatDate, fullName } from '@/lib/format';
 import { PageHeader } from '@/components/page-header';
 import {
   EmployeeCombobox,
@@ -107,6 +107,31 @@ export default function TrainingsPage() {
     }
     return m;
   }, [users.data]);
+
+  const myEmployeeId = canManage
+    ? undefined
+    : (employees.data ?? []).find((e) => e.userId === user?.id)?.id;
+
+  const myEnrollments = useApi(
+    ['trainings.employee', String(myEmployeeId ?? '')],
+    () => trainingsApi.listByEmployee(myEmployeeId!),
+    { enabled: myEmployeeId !== undefined }
+  );
+
+  const enrolledTrainingIds = React.useMemo(() => {
+    const ids = new Set<number>();
+    const list = myEnrollments.data ?? [];
+    for (const e of list) {
+      if (
+        e.training?.id !== undefined &&
+        e.status !== 'CANCELLED' &&
+        e.status !== 'REJECTED'
+      ) {
+        ids.add(e.training.id);
+      }
+    }
+    return ids;
+  }, [myEnrollments.data]);
 
   const enrolled = (trainings ?? []).reduce(
     (s, t) => s + (t.numberOfParticipants ?? 0),
@@ -197,6 +222,8 @@ export default function TrainingsPage() {
                 employees={employees.data ?? []}
                 userMap={userMap}
                 canManage={canManage}
+                myEmployeeId={myEmployeeId}
+                enrolledTrainingIds={enrolledTrainingIds}
                 onDeleted={refetch}
               />
             );
@@ -212,12 +239,16 @@ function TrainingCard({
   employees,
   userMap,
   canManage,
+  myEmployeeId,
+  enrolledTrainingIds,
   onDeleted,
 }: {
   training: Training;
   employees: EmployeeResponse[];
   userMap: Map<number, User>;
   canManage: boolean;
+  myEmployeeId?: number;
+  enrolledTrainingIds?: Set<number>;
   onDeleted: () => void;
 }) {
   const { dict } = useI18n();
@@ -226,6 +257,7 @@ function TrainingCard({
   const fill = Math.min((participants / training.capacity) * 100, 100);
   const isFull = participants >= training.capacity;
   const isDone = training.status === 'DONE';
+  const isEnrolled = !canManage && enrolledTrainingIds?.has(training.id);
   const [showEnrollments, setShowEnrollments] = React.useState(false);
 
   const removeMutation = useApiMutation<number, string>(
@@ -233,10 +265,10 @@ function TrainingCard({
     {
       invalidate: ['trainings.list'],
       onSuccess: () => {
-        toast.success(t.successDeleted);
+        toast.add({ type: 'success', description: t.successDeleted });
         onDeleted();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -260,7 +292,15 @@ function TrainingCard({
             {t.by} {training.trainer || '—'}
           </p>
         </div>
-        <StatusBadge status={training.status} />
+        <div className="flex items-center gap-1.5">
+          {isEnrolled && (
+            <span className="bg-chart-2/15 text-chart-2 ring-chart-2/20 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset">
+              <CircleCheck className="size-3" />
+              {t.enrolled}
+            </span>
+          )}
+          <StatusBadge status={training.status} />
+        </div>
       </div>
 
       <CardContent className="flex-1 space-y-4 p-4">
@@ -315,6 +355,9 @@ function TrainingCard({
           training={training}
           employees={employees}
           userMap={userMap}
+          canManage={canManage}
+          myEmployeeId={myEmployeeId}
+          isEnrolled={isEnrolled}
           disabled={isFull || isDone}
         />
         {canManage && (
@@ -431,7 +474,7 @@ function TrainingEnrollmentsPanel({ trainingId }: { trainingId: number }) {
       onSuccess: () => {
         refetch();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -443,10 +486,10 @@ function TrainingEnrollmentsPanel({ trainingId }: { trainingId: number }) {
         'trainings.list',
       ],
       onSuccess: () => {
-        toast.success(t.trainingRemoved);
+        toast.add({ type: 'success', description: t.trainingRemoved });
         refetch();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -490,7 +533,10 @@ function TrainingEnrollmentsPanel({ trainingId }: { trainingId: number }) {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">
               {enrollment.employee
-                ? `Employee #${enrollment.employee.employeeCode ?? enrollment.employee.id}`
+                ? fullName(
+                    enrollment.employee.user?.name,
+                    enrollment.employee.user?.lastname
+                  ) || enrollment.employee.employeeCode
                 : '—'}
             </p>
             <p className="text-muted-foreground text-xs">
@@ -557,11 +603,17 @@ function EnrollDialog({
   training,
   employees,
   userMap,
+  canManage,
+  myEmployeeId,
+  isEnrolled,
   disabled,
 }: {
   training: Training;
   employees: EmployeeResponse[];
   userMap: Map<number, User>;
+  canManage: boolean;
+  myEmployeeId?: number;
+  isEnrolled?: boolean;
   disabled: boolean;
 }) {
   const { dict } = useI18n();
@@ -580,13 +632,37 @@ function EnrollDialog({
     {
       invalidate: ['trainings.list'],
       onSuccess: () => {
-        toast.success(t.successEnrolled);
+        toast.add({ type: 'success', description: t.successEnrolled });
         setOpen(false);
         setEmployeeId(0);
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
+
+  if (!canManage && myEmployeeId) {
+    if (isEnrolled) {
+      return (
+        <Button size="sm" variant="outline" disabled>
+          <CheckCircle2 className="size-4" /> {t.enrolled}
+        </Button>
+      );
+    }
+    return (
+      <Button
+        size="sm"
+        disabled={disabled || enrollMutation.isPending}
+        onClick={() =>
+          enrollMutation.mutate({
+            trainingId: training.id,
+            employeeId: myEmployeeId,
+          })
+        }
+      >
+        <UserPlus /> {t.enroll}
+      </Button>
+    );
+  }
 
   return (
     <Dialog
@@ -686,11 +762,11 @@ function AddTrainingDialog({
           }
         };
         void createPost().catch(() => {});
-        toast.success(t.successCreated);
+        toast.add({ type: 'success', description: t.successCreated });
         setOpen(false);
         form.reset();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 

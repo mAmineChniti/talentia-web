@@ -22,7 +22,7 @@ import {
   Users,
   Video,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast';
 import Link from 'next/link';
 
 import { PolarAngleAxis, RadialBar, RadialBarChart } from 'recharts';
@@ -372,7 +372,11 @@ function ApplicationsView({
                     }
                   >
                     <Users className="size-3.5" />
-                    {postApps.length} {t.candidate.toLowerCase()}(s)
+                    {t.candidateCount
+                      .split('{count}')
+                      .join(String(postApps.length))
+                      .split('{s}')
+                      .join(postApps.length > 1 ? 's' : '')}
                     {isExpanded ? (
                       <ChevronUp className="size-3.5" />
                     ) : (
@@ -620,10 +624,10 @@ function ScheduleInterviewSimple({
     {
       invalidate: ['interviews.list', 'dashboard.get'],
       onSuccess: () => {
-        toast.success(t.successScheduled);
+        toast.add({ type: 'success', description: t.successScheduled });
         onClose();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -891,10 +895,10 @@ function InterviewDeleteButton({
     {
       invalidate: ['interviews.list'],
       onSuccess: () => {
-        toast.success(t.successDeleted);
+        toast.add({ type: 'success', description: t.successDeleted });
         onDeleted();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 
@@ -1001,12 +1005,12 @@ function ScheduleInterviewDialog({
     {
       invalidate: ['interviews.list', 'dashboard.get'],
       onSuccess: () => {
-        toast.success(t.successScheduled);
+        toast.add({ type: 'success', description: t.successScheduled });
         setOpen(false);
         reset();
         form.reset();
       },
-      onError: (err) => toast.error(err.message),
+      onError: (err) => toast.add({ type: 'error', description: err.message }),
     }
   );
 

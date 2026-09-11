@@ -21,10 +21,17 @@ const PROTECTED_PREFIXES = [
   '/recruitment',
 ];
 
+const VISITOR_PATHS = [
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+];
+
 const ROUTE_ROLES: Record<string, string[]> = {
   dashboard: ['EMPLOYEE', 'HR', 'ADMIN'],
   employees: ['HR', 'ADMIN'],
-  attendance: ['HR', 'ADMIN'],
+  attendance: ['EMPLOYEE', 'HR', 'ADMIN'],
   leaves: ['EMPLOYEE', 'HR', 'ADMIN'],
   contracts: ['HR', 'ADMIN'],
   payroll: ['ADMIN'],
@@ -53,6 +60,19 @@ function isProtectedPath(pathname: string, locale: Locale): boolean {
         : pathname;
   return PROTECTED_PREFIXES.some(
     (prefix) => relative === prefix || relative.startsWith(`${prefix}/`)
+  );
+}
+
+function isVisitorPath(pathname: string, locale: Locale): boolean {
+  const relative =
+    pathname === `/${locale}`
+      ? '/'
+      : pathname.startsWith(`/${locale}/`)
+        ? pathname.slice(`/${locale}`.length)
+        : pathname;
+  return (
+    relative === '/' ||
+    VISITOR_PATHS.some((p) => relative === p || relative.startsWith(`${p}/`))
   );
 }
 
@@ -106,6 +126,14 @@ export function proxy(request: NextRequest) {
     loginUrl.search = '';
     loginUrl.searchParams.set('from', pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Logged-in users should not see visitor pages (login, register, etc.)
+  if (session && userCookie && isVisitorPath(pathname, locale)) {
+    const dashUrl = request.nextUrl.clone();
+    dashUrl.pathname = `/${locale}/dashboard`;
+    dashUrl.search = '';
+    return NextResponse.redirect(dashUrl);
   }
 
   if (session) {
