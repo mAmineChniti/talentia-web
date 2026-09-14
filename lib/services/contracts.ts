@@ -21,4 +21,8 @@ export const contractsApi = {
   },
   remove: (id: number) =>
     request<string>(`/contracts/${id}`, { method: 'DELETE' }),
+  setStatus: (id: number, status: string) =>
+    request<ContractResponse>(`/contracts/${id}/status?status=${status}`, {
+      method: 'PATCH',
+    }),
 };

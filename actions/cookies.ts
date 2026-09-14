@@ -30,6 +30,10 @@ export async function setSessionCookie(user: SessionUser) {
     path: '/',
     maxAge: ONE_YEAR,
   });
+  cookieStore.set('JSESSIONID', JSON.stringify(user.id), {
+    path: '/',
+    maxAge: ONE_YEAR,
+  });
 }
 
 export async function deleteSessionCookie() {

@@ -44,7 +44,7 @@ export function AppSidebar() {
   const { data: employees } = useApi(
     'employees.list',
     () => employeesApi.list(),
-    { enabled: !!user }
+    { enabled: !!user && user.role !== 'CANDIDATE' }
   );
   const isEmployee = (employees ?? []).some((e) => e.userId === user?.id);
   const s = dict.sidebar;
