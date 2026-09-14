@@ -502,13 +502,13 @@ function PostCard({
           />
         )}
         {user &&
-          !canModerate &&
+          user.role === 'CANDIDATE' &&
           post.typePost === 'POSTE_TRAVAIL' &&
           post.auteurId !== user.id && (
             <ApplyDialog post={post} applied={applied} />
           )}
         {user &&
-          !canModerate &&
+          user.role === 'EMPLOYEE' &&
           post.typePost === 'FORMATION' &&
           post.trainingId &&
           post.auteurId !== user.id && <TrainingApplyButton post={post} />}
@@ -717,10 +717,17 @@ function TrainingApplyButton({ post }: { post: PostResponse }) {
     return employees.find((e) => e.userId === user.id);
   }, [user, employees]);
 
+  const isEmployee = myEmployee?.user?.role === 'EMPLOYEE';
+
   const { data: myEnrollments } = useApi(
-    ['trainings.employee', String(myEmployee?.id)],
-    () => trainingsApi.listByEmployee(myEmployee!.id),
-    { enabled: !!myEmployee }
+    isEmployee
+      ? ['trainings.employee', String(myEmployee!.id)]
+      : ['trainings.employee', ''],
+    () =>
+      isEmployee
+        ? trainingsApi.listByEmployee(myEmployee!.id)
+        : Promise.resolve([]),
+    { enabled: isEmployee }
   );
 
   const isEnrolled = React.useMemo(() => {

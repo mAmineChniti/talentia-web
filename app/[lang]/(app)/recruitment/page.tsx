@@ -173,6 +173,16 @@ const recommendationTone: Record<string, string> = {
   REFUSER: 'bg-destructive/10 text-destructive ring-destructive/25',
 };
 
+// Stages from which a new interview can be scheduled. TECHNICAL_INTERVIEW
+// stays eligible: scheduling from there only adds an interview (stage
+// unchanged), which also recovers candidacies stranded at that stage with no
+// interview left. ACCEPTED/REJECTED stay excluded.
+const SCHEDULABLE_STATUSES = new Set<string>([
+  'PENDING',
+  'HR_INTERVIEW',
+  'TECHNICAL_INTERVIEW',
+]);
+
 export default function RecruitmentPage() {
   const { dict } = useI18n();
   const t = dict.recruitment;
@@ -574,7 +584,7 @@ function ApplicationDetailDialog({
             </div>
           )}
 
-          {(app.status === 'PENDING' || app.status === 'HR_INTERVIEW') && (
+          {SCHEDULABLE_STATUSES.has(app.status) && (
             <div className="pt-1">
               <Button
                 variant="outline"
@@ -893,7 +903,8 @@ function InterviewDeleteButton({
   const deleteMutation = useApiMutation<number, string>(
     (id) => interviewsApi.remove(id),
     {
-      invalidate: ['interviews.list'],
+      // Deleting an interview steps the app back a stage server-side.
+      invalidate: ['interviews.list', 'applications.list'],
       onSuccess: () => {
         toast.add({ type: 'success', description: t.successDeleted });
         onDeleted();
@@ -969,8 +980,8 @@ function ScheduleInterviewDialog({
   );
 
   const eligibleApplicants = React.useMemo(() => {
-    return (applicants.data ?? []).filter(
-      (a) => a.status === 'PENDING' || a.status === 'HR_INTERVIEW'
+    return (applicants.data ?? []).filter((a) =>
+      SCHEDULABLE_STATUSES.has(a.status)
     );
   }, [applicants.data]);
 

@@ -375,33 +375,31 @@ function LeaveRow({
       <TableCell>
         {canManage ? (
           <div className="flex items-center justify-end gap-1">
-            {isPending ? (
-              <>
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  className="border-chart-2/30 text-chart-2 hover:text-chart-2 hover:bg-chart-2/10"
-                  aria-label={t.approve}
-                  title={t.approve}
-                  onClick={() => review('approve', leave.id)}
-                  disabled={approveMutation.isPending}
-                >
-                  <ThumbsUp />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  className="border-destructive/30 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  aria-label={t.reject}
-                  title={t.reject}
-                  onClick={() => review('reject', leave.id)}
-                  disabled={rejectMutation.isPending}
-                >
-                  <X />
-                </Button>
-              </>
-            ) : (
-              <span className="text-muted-foreground/50 text-xs">—</span>
+            {(isPending || leave.status === 'REJECTED') && (
+              <Button
+                variant="outline"
+                size="icon-sm"
+                className="border-chart-2/30 text-chart-2 hover:text-chart-2 hover:bg-chart-2/10"
+                aria-label={t.approve}
+                title={isPending ? t.approve : t.changeToApproved}
+                onClick={() => review('approve', leave.id)}
+                disabled={approveMutation.isPending}
+              >
+                <ThumbsUp />
+              </Button>
+            )}
+            {(isPending || leave.status === 'APPROVED') && (
+              <Button
+                variant="outline"
+                size="icon-sm"
+                className="border-destructive/30 text-destructive hover:text-destructive hover:bg-destructive/10"
+                aria-label={t.reject}
+                title={isPending ? t.reject : t.changeToRejected}
+                onClick={() => review('reject', leave.id)}
+                disabled={rejectMutation.isPending}
+              >
+                <X />
+              </Button>
             )}
           </div>
         ) : isPending ? (

@@ -1,17 +1,19 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type * as z from 'zod';
 import {
   Briefcase,
-  GraduationCap,
   MoreHorizontal,
   Pencil,
   Plus,
+  QrCode,
   Search,
   Trash2,
+  UserPlus,
   Users,
 } from 'lucide-react';
 
@@ -21,10 +23,8 @@ import { useSession } from '@/hooks/use-session';
 import { hasMinimumRole } from '@/lib/rbac';
 import { createEmployeeSchema } from '@/lib/schemas/employees';
 import { employeesApi } from '@/lib/services/employees';
-import { trainingsApi } from '@/lib/services/trainings';
 import { usersApi } from '@/lib/services/users';
 import type { EmployeeResponse } from '@/lib/types/employees';
-import type { TrainingEnrollment } from '@/lib/types/trainings';
 import type { User } from '@/lib/types/users';
 import { formatCurrency, formatDate, fullName, initials } from '@/lib/format';
 import { PageHeader } from '@/components/page-header';
@@ -132,6 +132,15 @@ export default function EmployeesPage() {
     return m;
   }, [users.data]);
 
+  // Only candidates can become employees: exclude HR/admins, users already
+  // converted to employees, and anything without a candidate role.
+  const candidateUsers = React.useMemo(() => {
+    const taken = new Set((employees ?? []).map((e) => e.userId));
+    return (users.data ?? []).filter(
+      (u) => u.role?.toUpperCase() === 'CANDIDATE' && !taken.has(u.id)
+    );
+  }, [users.data, employees]);
+
   const departments = React.useMemo(() => {
     return [
       ...new Set(
@@ -170,11 +179,7 @@ export default function EmployeesPage() {
           .join(String(employees?.length ?? 0))}
         icon={<Users className="size-6" />}
         actions={
-          canManage ? (
-            <AddEmployeeDialog
-              users={(users.data ?? []).filter((u) => u.role === 'CANDIDATE')}
-            />
-          ) : undefined
+          canManage ? <AddEmployeeDialog users={candidateUsers} /> : undefined
         }
       />
 
@@ -262,13 +267,7 @@ export default function EmployeesPage() {
               action={
                 search || department !== 'all'
                   ? undefined
-                  : canManage && (
-                      <AddEmployeeDialog
-                        users={(users.data ?? []).filter(
-                          (u) => u.role === 'CANDIDATE'
-                        )}
-                      />
-                    )
+                  : canManage && <AddEmployeeDialog users={candidateUsers} />
               }
             />
           ) : (
@@ -403,23 +402,27 @@ function RowActions({
   const canManage = hasMinimumRole(user?.role, 'HR');
   const [open, setOpen] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [trainingsOpen, setTrainingsOpen] = React.useState(false);
+  const [qrOpen, setQrOpen] = React.useState(false);
   const u = userMap.get(employee.userId);
-  const employeeName = fullName(u?.name, u?.lastname);
 
-  const deleteMutation = useApiMutation<number, string>(
-    (id) => employeesApi.remove(id),
-    {
-      invalidate: ['employees.list', 'dashboard.get'],
-      onSuccess: () => {
-        toast.add({
-          type: 'success',
-          description: t.successDeleted.split('{name}').join(employeeName),
-        });
-      },
-      onError: (err) => toast.add({ type: 'error', description: err.message }),
-    }
-  );
+  // Deactivation is a soft delete: the backend flips `active` instead of
+  // removing the row, since attendance/contracts/leaves/payroll reference it.
+  const statusMutation = useApiMutation<
+    { id: number; isActive: boolean },
+    EmployeeResponse
+  >(({ id, isActive }) => employeesApi.setActive(id, isActive), {
+    invalidate: ['employees.list', 'dashboard.get'],
+    onSuccess: (_data, vars) => {
+      toast.add({
+        type: 'success',
+        description: vars.isActive
+          ? t.successReactivated
+          : t.successDeactivated,
+      });
+      setConfirmOpen(false);
+    },
+    onError: (err) => toast.add({ type: 'error', description: err.message }),
+  });
 
   if (!canManage) return;
 
@@ -434,18 +437,24 @@ function RowActions({
           <MoreHorizontal />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => setTrainingsOpen(true)}>
-            <GraduationCap /> {t.trainings}
+          <DropdownMenuItem onClick={() => setQrOpen(true)}>
+            <QrCode /> {t.viewQrCode}
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setOpen(true)}>
+          <DropdownMenuItem onClick={() => setOpen(true)}>
             <Pencil /> {t.edit}
           </DropdownMenuItem>
-          <DropdownMenuItem
-            className="text-destructive"
-            onSelect={() => setConfirmOpen(true)}
-          >
-            <Trash2 /> {t.delete}
-          </DropdownMenuItem>
+          {employee.active ? (
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => setConfirmOpen(true)}
+            >
+              <Trash2 /> {t.deactivate}
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={() => setConfirmOpen(true)}>
+              <UserPlus /> {t.reactivate}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -455,19 +464,24 @@ function RowActions({
         employee={employee}
       />
 
-      <EmployeeTrainingsDialog
+      <EmployeeQrDialog
         employee={employee}
-        employeeName={employeeName}
-        isOpen={trainingsOpen}
-        onOpenChange={setTrainingsOpen}
+        employeeName={fullName(u?.name, u?.lastname)}
+        isOpen={qrOpen}
+        onOpenChange={setQrOpen}
       />
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>{t.deleteConfirm}</DialogTitle>
+            <DialogTitle>
+              {employee.active ? t.deactivateConfirm : t.reactivateConfirm}
+            </DialogTitle>
             <DialogDescription>
-              {t.deleteConfirmMessage
+              {(employee.active
+                ? t.deactivateConfirmMessage
+                : t.reactivateConfirmMessage
+              )
                 .split('{name}')
                 .join(fullName(u?.name, u?.lastname))}
             </DialogDescription>
@@ -476,13 +490,26 @@ function RowActions({
             <Button variant="outline" onClick={() => setConfirmOpen(false)}>
               {t.cancel}
             </Button>
-            <Button
-              variant="destructive"
-              onClick={() => deleteMutation.mutate(employee.id)}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? t.deleting : t.delete}
-            </Button>
+            {employee.active ? (
+              <Button
+                variant="destructive"
+                onClick={() =>
+                  statusMutation.mutate({ id: employee.id, isActive: false })
+                }
+                disabled={statusMutation.isPending}
+              >
+                {statusMutation.isPending ? t.deactivating : t.deactivate}
+              </Button>
+            ) : (
+              <Button
+                onClick={() =>
+                  statusMutation.mutate({ id: employee.id, isActive: true })
+                }
+                disabled={statusMutation.isPending}
+              >
+                {statusMutation.isPending ? t.reactivating : t.reactivate}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -490,7 +517,7 @@ function RowActions({
   );
 }
 
-function EmployeeTrainingsDialog({
+function EmployeeQrDialog({
   employee,
   employeeName,
   isOpen,
@@ -503,127 +530,37 @@ function EmployeeTrainingsDialog({
 }) {
   const { dict } = useI18n();
   const t = dict.employees;
-  const {
-    data: enrollments,
-    loading,
-    error,
-    refetch,
-  } = useApi(
-    ['trainings.employee', String(employee.id)],
-    () => trainingsApi.listByEmployee(employee.id),
-    { enabled: isOpen }
-  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>
-            {t.trainingsDialogTitle.split('{name}').join(employeeName)}
+            {t.qrDialogTitle.split('{name}').join(employeeName)}
           </DialogTitle>
-          <DialogDescription>{t.trainingsDialogDesc}</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-2 py-1">
-          {error ? (
-            <p className="text-destructive text-xs">{error.message}</p>
-          ) : loading ? (
-            <div className="space-y-2">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          ) : (enrollments ?? []).length === 0 ? (
-            <p className="text-muted-foreground py-6 text-center text-sm">
-              {t.noTrainings}
-            </p>
+        <div className="flex flex-col items-center gap-3 py-2">
+          {employee.qrImageUrl ? (
+            <>
+              <Image
+                src={employee.qrImageUrl}
+                alt={t.qrDialogTitle.split('{name}').join(employeeName)}
+                width={240}
+                height={240}
+                className="size-60 rounded-xl ring-1 ring-black/10"
+              />
+              <span className="bg-muted text-muted-foreground rounded-md px-2 py-1 font-mono text-[11px]">
+                {employee.employeeCode}
+              </span>
+            </>
           ) : (
-            (enrollments ?? []).map((enrollment) => {
-              return (
-                <EnrollmentRow
-                  key={enrollment.id}
-                  enrollment={enrollment}
-                  onChanged={refetch}
-                />
-              );
-            })
+            <p className="text-muted-foreground py-6 text-center text-sm">
+              {t.noQrCode}
+            </p>
           )}
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function EnrollmentRow({
-  enrollment,
-  onChanged,
-}: {
-  enrollment: TrainingEnrollment;
-  onChanged: () => void;
-}) {
-  const { dict } = useI18n();
-  const t = dict.employees;
-  const isComplete = enrollment.status === 'COMPLETED';
-  const [score, setScore] = React.useState('');
-  const scoreNum = Number(score);
-  const isScoreInvalid =
-    score !== '' && (Number.isNaN(scoreNum) || scoreNum < 0 || scoreNum > 20);
-
-  const completeMutation = useApiMutation<
-    { id: number; score: number },
-    TrainingEnrollment
-  >(({ id, score }) => trainingsApi.complete(id, score), {
-    invalidate: [['trainings.employee', String(enrollment.employee?.id)]],
-    onSuccess: () => {
-      toast.add({ type: 'success', description: t.successCompleted });
-      setScore('');
-      onChanged();
-    },
-    onError: (err) => toast.add({ type: 'error', description: err.message }),
-  });
-
-  return (
-    <div className="bg-muted/40 flex items-center gap-3 rounded-xl p-3">
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium">
-          {enrollment.training?.title ?? '—'}
-        </p>
-        <p className="text-muted-foreground text-xs">
-          {t.enrollmentDate} {formatDate(enrollment.enrollmentDate)}
-          {enrollment.score !== undefined && (
-            <span className="ms-2">
-              · {t.score} {enrollment.score}
-            </span>
-          )}
-        </p>
-      </div>
-      {isComplete ? (
-        <StatusBadge status="COMPLETED" />
-      ) : (
-        <div className="flex items-center gap-2">
-          <Input
-            type="number"
-            min="0"
-            max="20"
-            value={score}
-            onChange={(e) => setScore(e.target.value)}
-            placeholder={t.scorePlaceholder}
-            className="w-24"
-            aria-invalid={isScoreInvalid}
-          />
-          <Button
-            size="sm"
-            onClick={() =>
-              completeMutation.mutate({
-                id: enrollment.id,
-                score: scoreNum,
-              })
-            }
-            disabled={!score || isScoreInvalid || completeMutation.isPending}
-          >
-            {completeMutation.isPending ? t.completing : t.complete}
-          </Button>
-        </div>
-      )}
-    </div>
   );
 }
 

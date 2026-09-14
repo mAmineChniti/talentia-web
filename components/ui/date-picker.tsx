@@ -216,7 +216,14 @@ export function DateTimePicker({
 }) {
   const { lang, dir } = useI18n();
   const [open, setOpen] = React.useState(false);
-  const date = value ? new Date(value + 'T00:00:00') : undefined;
+  // Values here are full datetimes (`YYYY-MM-DDTHH:mm:ss`), so unlike the
+  // date-only picker above they must NOT get another `T00:00:00` suffix —
+  // that produced an Invalid Date and crashed `format()` on re-render.
+  const date = React.useMemo(() => {
+    if (!value) return undefined;
+    const parsed = new Date(/T/.test(value) ? value : `${value}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+  }, [value]);
 
   const dateFnsLocale = dateFnsLocales[lang];
   const dayPickerLocale = dayPickerLocales[lang];
@@ -260,7 +267,7 @@ export function DateTimePicker({
   };
 
   const formatDateTimeDisplay = (date: Date | undefined) => {
-    if (!date) return placeholder;
+    if (!date || Number.isNaN(date.getTime())) return placeholder;
     return (
       format(date, 'PPP', { locale: dateFnsLocale as any }) +
       ' at ' +

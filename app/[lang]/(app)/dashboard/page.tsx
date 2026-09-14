@@ -15,6 +15,7 @@ import {
   ThumbsUp,
   UserPlus,
   Users,
+  Video,
 } from 'lucide-react';
 import { toast } from '@/components/ui/toast';
 
@@ -23,8 +24,10 @@ import Link from 'next/link';
 import { useApi, useApiMutation } from '@/hooks/use-api';
 import { useI18n } from '@/components/i18n-provider';
 import { useSession } from '@/hooks/use-session';
+import { applicationsApi } from '@/lib/services/applications';
 import { dashboardApi } from '@/lib/services/dashboard';
 import { employeesApi } from '@/lib/services/employees';
+import { postsApi } from '@/lib/services/posts';
 import { leavesApi } from '@/lib/services/leaves';
 import { payrollApi } from '@/lib/services/payroll';
 import { attendanceApi } from '@/lib/services/attendance';
@@ -112,8 +115,9 @@ export default function DashboardPage() {
   const role = user?.role?.toUpperCase();
   const isAdmin = role === 'ADMIN';
   const isHr = role === 'HR';
+  const isCandidate = role === 'CANDIDATE';
   const canManage = hasMinimumRole(user?.role, 'HR');
-  const isEmployee = !canManage && !isHr;
+  const isEmployee = !canManage && !isHr && !isCandidate;
 
   // Org-wide analytics (HR and above)
   const dashboard = useApi('dashboard.get', () => dashboardApi.get(), {
@@ -123,8 +127,11 @@ export default function DashboardPage() {
   const payroll = useApi('payroll.list', () => payrollApi.list(), {
     enabled: isAdmin,
   });
-  // Employee directory (org stats for managers, self lookup for employees)
-  const employees = useApi('employees.list', () => employeesApi.list());
+  // Employee directory (org stats for managers, self lookup for employees).
+  // Candidates never need the directory, so don't fetch it for them.
+  const employees = useApi('employees.list', () => employeesApi.list(), {
+    enabled: !isCandidate,
+  });
   // All leave requests (managers review the queue)
   const allLeaves = useApi('leaves.list', () => leavesApi.list(), {
     enabled: canManage,
@@ -138,6 +145,47 @@ export default function DashboardPage() {
     ? employees.data?.find((e) => e.userId === userId)
     : undefined;
   const myEmployeeId = myEmployee?.id;
+
+  // Candidate records (scoped to their own user id client-side: the backend
+  // exposes no candidate-scoped endpoints, so filter the shared lists).
+  const candidateApplications = useApi(
+    ['applications', 'candidate', String(userId)],
+    () => applicationsApi.list(),
+    { enabled: isCandidate && userId !== undefined }
+  );
+  const candidateInterviews = useApi(
+    ['interviews', 'candidate', String(userId)],
+    () => interviewsApi.list(),
+    { enabled: isCandidate && userId !== undefined }
+  );
+  const candidatePosts = useApi('posts.list', () => postsApi.list(), {
+    enabled: isCandidate,
+  });
+
+  const myApplications = React.useMemo(
+    () =>
+      (candidateApplications.data ?? [])
+        .filter((a) => a.userId === userId)
+        .toSorted(
+          (a, b) => timeOf(b.datePostulation) - timeOf(a.datePostulation)
+        ),
+    [candidateApplications.data, userId]
+  );
+  const myApplicationIds = React.useMemo(
+    () => new Set(myApplications.map((a) => a.id)),
+    [myApplications]
+  );
+  const myInterviews = React.useMemo(
+    () =>
+      (candidateInterviews.data ?? [])
+        .filter((i) => myApplicationIds.has(i.applicationId))
+        .toSorted((a, b) => timeOf(a.interviewDate) - timeOf(b.interviewDate)),
+    [candidateInterviews.data, myApplicationIds]
+  );
+  const postById = React.useMemo(
+    () => new Map((candidatePosts.data ?? []).map((p) => [p.id, p])),
+    [candidatePosts.data]
+  );
 
   // Self-service records (employee only, scoped to their own profile)
   const myLeaves = useApi(
@@ -406,21 +454,70 @@ export default function DashboardPage() {
       .slice(0, 5);
   }, [interviews.data, canManage]);
 
+  // ===== Candidate derivations =====
+
+  const pendingApplications = React.useMemo(
+    () => myApplications.filter((a) => a.status === 'PENDING').length,
+    [myApplications]
+  );
+  const inReviewApplications = React.useMemo(
+    () =>
+      myApplications.filter(
+        (a) => a.status === 'HR_INTERVIEW' || a.status === 'TECHNICAL_INTERVIEW'
+      ).length,
+    [myApplications]
+  );
+  const acceptedApplications = React.useMemo(
+    () => myApplications.filter((a) => a.status === 'ACCEPTED').length,
+    [myApplications]
+  );
+  const rejectedApplications = React.useMemo(
+    () => myApplications.filter((a) => a.status === 'REJECTED').length,
+    [myApplications]
+  );
+  const upcomingCandidateInterviews = React.useMemo(() => {
+    if (!isCandidate) return [];
+    const now = new Date();
+    const cutoff = now.getTime() - 12 * 60 * 60 * 1000;
+    return myInterviews
+      .filter(
+        (i) => i.status === 'PLANNED' && timeOf(i.interviewDate) >= cutoff
+      )
+      .slice(0, 5);
+  }, [myInterviews, isCandidate]);
+  const nextCandidateInterview = upcomingCandidateInterviews[0];
+
   // ===== Loading / error gating =====
 
-  const primaryError = canManage ? dashboard.error : employees.error;
+  const candidateError =
+    candidateApplications.error ?? candidateInterviews.error;
+  const primaryError = canManage
+    ? dashboard.error
+    : isCandidate
+      ? candidateError
+      : employees.error;
 
   if (primaryError)
     return (
       <ErrorState
-        onRetry={canManage ? dashboard.refetch : employees.refetch}
+        onRetry={
+          canManage
+            ? dashboard.refetch
+            : isCandidate
+              ? candidateApplications.refetch
+              : employees.refetch
+        }
         description={primaryError.message}
       />
     );
   if (
     (canManage
       ? dashboard.loading || !dashboard.data
-      : employees.loading || !employees.data) ||
+      : isCandidate
+        ? candidateApplications.loading ||
+          !candidateApplications.data ||
+          candidateInterviews.loading
+        : employees.loading || !employees.data) ||
     (isEmployee &&
       ((myEmployeeId !== undefined &&
         (myLeaves.loading || myAttendance.loading || myEnrollments.loading)) ||
@@ -462,7 +559,11 @@ export default function DashboardPage() {
                 {username ? `, ${username}` : ''}
               </h1>
               <p className="text-primary-foreground/75 mt-1.5 max-w-xl text-sm text-pretty">
-                {canManage ? t.description : t.descriptionSelf}
+                {canManage
+                  ? t.description
+                  : isCandidate
+                    ? t.descriptionCandidate
+                    : t.descriptionSelf}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -485,6 +586,22 @@ export default function DashboardPage() {
                   {t.monthlyPayroll} · {formatCurrency(data?.totalSalary)}
                 </span>
               )}
+              {isCandidate && (
+                <>
+                  <span className="bg-primary-foreground/15 ring-primary-foreground/20 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ring-1 backdrop-blur-sm">
+                    <BriefcaseBusiness className="size-3.5" />
+                    {t.myApplications} · {myApplications.length}
+                  </span>
+                  <span className="bg-primary-foreground/15 ring-primary-foreground/20 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ring-1 backdrop-blur-sm">
+                    <CalendarDays className="size-3.5" />
+                    {t.myInterviews} · {upcomingCandidateInterviews.length}
+                  </span>
+                  <span className="bg-primary-foreground/15 ring-primary-foreground/20 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ring-1 backdrop-blur-sm">
+                    <ThumbsUp className="size-3.5" />
+                    {t.acceptedApplications} · {acceptedApplications}
+                  </span>
+                </>
+              )}
               {isEmployee && (
                 <>
                   <span className="bg-primary-foreground/15 ring-primary-foreground/20 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ring-1 backdrop-blur-sm">
@@ -503,6 +620,27 @@ export default function DashboardPage() {
               )}
             </div>
             <div className="flex flex-wrap gap-2">
+              {isCandidate && (
+                <>
+                  <Button
+                    render={<Link href="/forum" />}
+                    nativeButton={false}
+                    size="sm"
+                    variant="secondary"
+                    className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-sm"
+                  >
+                    <BriefcaseBusiness /> {t.browseJobs}
+                  </Button>
+                  <Button
+                    render={<Link href="/profile" />}
+                    nativeButton={false}
+                    size="sm"
+                    className="bg-primary-foreground/15 text-primary-foreground ring-primary-foreground/25 hover:bg-primary-foreground/25 ring-1 ring-inset"
+                  >
+                    <Users /> {dict.profile.title}
+                  </Button>
+                </>
+              )}
               {isEmployee && (
                 <Button
                   render={<Link href="/leaves" />}
@@ -514,10 +652,12 @@ export default function DashboardPage() {
                   <CalendarPlus /> {dict.leaves.newRequest}
                 </Button>
               )}
-              <ScanDialog
-                size="sm"
-                buttonClassName="bg-primary-foreground/15 text-primary-foreground ring-primary-foreground/25 hover:bg-primary-foreground/25 ring-1 ring-inset"
-              />
+              {!isCandidate && (
+                <ScanDialog
+                  size="sm"
+                  buttonClassName="bg-primary-foreground/15 text-primary-foreground ring-primary-foreground/25 hover:bg-primary-foreground/25 ring-1 ring-inset"
+                />
+              )}
               {canManage && (
                 <Button
                   render={<Link href="/employees" />}
@@ -561,6 +701,44 @@ export default function DashboardPage() {
                     {data?.pendingLeaves ?? 0} {t.pendingLeaves}
                   </span>
                 </div>
+              </div>
+            ) : isCandidate ? (
+              <div className="bg-primary-foreground/10 ring-primary-foreground/20 h-full rounded-2xl p-4 ring-1 backdrop-blur-md">
+                <div className="flex items-center gap-2">
+                  <div className="bg-primary-foreground text-primary flex size-7 items-center justify-center rounded-lg shadow-sm">
+                    <Video className="size-4" />
+                  </div>
+                  <p className="text-sm font-semibold">{t.myInterviews}</p>
+                </div>
+                {nextCandidateInterview ? (
+                  <div className="mt-3 space-y-1">
+                    <p className="text-sm font-semibold">
+                      {formatDateTime(nextCandidateInterview.interviewDate)}
+                    </p>
+                    <p className="text-primary-foreground/85 text-[13px]">
+                      {nextCandidateInterview.location ??
+                        `#${nextCandidateInterview.applicationId}`}
+                    </p>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      <StatusBadge status={nextCandidateInterview.type} />
+                      <StatusBadge status={nextCandidateInterview.status} />
+                    </div>
+                    {nextCandidateInterview.meetingLink ? (
+                      <a
+                        href={nextCandidateInterview.meetingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-primary-foreground text-primary mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                      >
+                        <Video className="size-3.5" /> {t.joinMeeting}
+                      </a>
+                    ) : undefined}
+                  </div>
+                ) : (
+                  <p className="text-primary-foreground/85 mt-2.5 text-[13px] leading-relaxed">
+                    {t.noUpcomingInterviews}
+                  </p>
+                )}
               </div>
             ) : (
               <div className="bg-primary-foreground/10 ring-primary-foreground/20 h-full rounded-2xl p-4 ring-1 backdrop-blur-md">
@@ -658,6 +836,41 @@ export default function DashboardPage() {
             />
           )}
         </div>
+      ) : isCandidate ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard
+            label={t.myApplications}
+            value={formatNumber(myApplications.length)}
+            hint={`${pendingApplications} ${dict.status.PENDING}`}
+            icon={<BriefcaseBusiness className="size-5" />}
+            accent="primary"
+          />
+          <StatCard
+            label={t.myPendingRequests}
+            value={formatNumber(pendingApplications + inReviewApplications)}
+            hint={t.myPendingHint}
+            icon={<Sparkles className="size-5" />}
+            accent="warning"
+          />
+          <StatCard
+            label={t.myInterviews}
+            value={formatNumber(upcomingCandidateInterviews.length)}
+            hint={
+              nextCandidateInterview
+                ? formatDate(nextCandidateInterview.interviewDate)
+                : t.noUpcomingInterviews
+            }
+            icon={<CalendarDays className="size-5" />}
+            accent="info"
+          />
+          <StatCard
+            label={t.acceptedApplications}
+            value={formatNumber(acceptedApplications)}
+            hint={`${rejectedApplications} ${dict.status.REJECTED}`}
+            icon={<ThumbsUp className="size-5" />}
+            accent="success"
+          />
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
@@ -688,6 +901,121 @@ export default function DashboardPage() {
             icon={<GraduationCap className="size-5" />}
             accent="info"
           />
+        </div>
+      )}
+
+      {/* Candidate workspace: own submissions + scheduled interviews only */}
+      {isCandidate && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <Card className="rounded-2xl shadow-sm lg:col-span-2">
+            <CardHeader className="flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle className="font-heading text-base">
+                  {t.myApplications}
+                </CardTitle>
+                <CardDescription>{t.myApplicationsDesc}</CardDescription>
+              </div>
+              <Button
+                render={<Link href="/forum" />}
+                nativeButton={false}
+                variant="ghost"
+                size="sm"
+              >
+                {t.browseJobs}{' '}
+                <ArrowRight className="size-3.5 rtl:rotate-180" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {myApplications.length > 0 ? (
+                <ul className="divide-y">
+                  {myApplications.slice(0, 5).map((a) => {
+                    const post = postById.get(a.postId);
+                    const snippet = post
+                      ? post.contenu.length > 90
+                        ? `${post.contenu.slice(0, 90)}…`
+                        : post.contenu
+                      : `#${a.postId}`;
+                    return (
+                      <li key={a.id} className="flex items-center gap-3 py-3">
+                        <div className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-xl">
+                          <BriefcaseBusiness className="size-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">
+                            {snippet}
+                          </p>
+                          <p className="text-muted-foreground truncate text-xs">
+                            {formatDate(a.datePostulation)}
+                          </p>
+                        </div>
+                        <StatusBadge status={a.status} />
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <EmptyChart
+                  icon={<BriefcaseBusiness />}
+                  message={t.noApplications}
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-heading text-base">
+                {t.myInterviews}
+              </CardTitle>
+              <CardDescription>{t.upcomingInterviewsDesc}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {upcomingCandidateInterviews.length > 0 ? (
+                <ul className="divide-y">
+                  {upcomingCandidateInterviews.map((i) => (
+                    <li key={i.id} className="flex items-center gap-3 py-3">
+                      <div className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-xl">
+                        <Video className="size-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">
+                          {formatDateTime(i.interviewDate)}
+                        </p>
+                        <p className="text-muted-foreground flex min-w-0 items-center gap-1 truncate text-xs">
+                          {i.location ? (
+                            <>
+                              <MapPin className="size-3 shrink-0" />{' '}
+                              {i.location}
+                            </>
+                          ) : (
+                            `#${i.applicationId}`
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        <StatusBadge status={i.status} />
+                        {i.meetingLink ? (
+                          <a
+                            href={i.meetingLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary inline-flex items-center gap-1 text-[11px] font-semibold hover:underline"
+                          >
+                            <Video className="size-3" /> {t.joinMeeting}
+                          </a>
+                        ) : undefined}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <EmptyChart
+                  icon={<CalendarDays />}
+                  message={t.noUpcomingInterviews}
+                />
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 

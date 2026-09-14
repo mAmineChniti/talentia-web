@@ -17,4 +17,8 @@ export const employeesApi = {
   },
   remove: (id: number) =>
     request<string>(`/employees/${id}`, { method: 'DELETE' }),
+  setActive: (id: number, isActive: boolean) =>
+    request<EmployeeResponse>(`/employees/${id}/active?active=${isActive}`, {
+      method: 'PATCH',
+    }),
 };

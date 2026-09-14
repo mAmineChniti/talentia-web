@@ -18,5 +18,6 @@ export interface EmployeeResponse {
   contractType: string;
   salary: number;
   active: boolean;
+  qrImageUrl?: string;
   user?: User;
 }

@@ -128,6 +128,12 @@ export default function ContractsPage() {
     return m;
   }, [employees.data]);
 
+  // The picker lists every active employee; old contracts stay visible in
+  // the table via their EXPIRED status instead of being deleted.
+  const contractableEmployees = React.useMemo(() => {
+    return (employees.data ?? []).filter((e) => e.active);
+  }, [employees.data]);
+
   const active = (contracts ?? []).filter((c) => c.status === 'ACTIVE').length;
   const expired = (contracts ?? []).filter(
     (c) => c.status === 'EXPIRED'
@@ -149,7 +155,7 @@ export default function ContractsPage() {
         actions={
           canManage ? (
             <AddContractDialog
-              employees={employees.data ?? []}
+              employees={contractableEmployees}
               userMap={userMap}
             />
           ) : undefined
@@ -207,7 +213,7 @@ export default function ContractsPage() {
               description={t.noContractsDesc}
               action={
                 <AddContractDialog
-                  employees={employees.data ?? []}
+                  employees={contractableEmployees}
                   userMap={userMap}
                 />
               }
@@ -341,12 +347,12 @@ function RowActions({ contract }: { contract: ContractResponse }) {
           <MoreHorizontal />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => setOpen(true)}>
+          <DropdownMenuItem onClick={() => setOpen(true)}>
             <Pencil /> {t.edit}
           </DropdownMenuItem>
           <DropdownMenuItem
             className="text-destructive"
-            onSelect={() => setConfirmOpen(true)}
+            onClick={() => setConfirmOpen(true)}
           >
             <Trash2 /> {t.delete}
           </DropdownMenuItem>

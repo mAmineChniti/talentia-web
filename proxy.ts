@@ -21,15 +21,10 @@ const PROTECTED_PREFIXES = [
   '/recruitment',
 ];
 
-const VISITOR_PATHS = [
-  '/login',
-  '/register',
-  '/forgot-password',
-  '/reset-password',
-];
+const VISITOR_PATHS = ['/login', '/register', '/forgot-password'];
 
 const ROUTE_ROLES: Record<string, string[]> = {
-  dashboard: ['EMPLOYEE', 'HR', 'ADMIN'],
+  dashboard: ['CANDIDATE', 'EMPLOYEE', 'HR', 'ADMIN'],
   employees: ['HR', 'ADMIN'],
   attendance: ['EMPLOYEE', 'HR', 'ADMIN'],
   leaves: ['EMPLOYEE', 'HR', 'ADMIN'],
@@ -38,6 +33,7 @@ const ROUTE_ROLES: Record<string, string[]> = {
   payslips: ['ADMIN'],
   trainings: ['EMPLOYEE', 'HR', 'ADMIN'],
   recruitment: ['HR', 'ADMIN'],
+  candidates: ['HR', 'ADMIN', 'CANDIDATE'],
   forum: ['CANDIDATE', 'EMPLOYEE', 'HR', 'ADMIN'],
 };
 
