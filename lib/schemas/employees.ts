@@ -9,5 +9,8 @@ export function createEmployeeSchema(m: ValidationMessages) {
     position: z.string().trim().min(1, m.positionRequired),
     contractType: z.string().trim().min(1, m.contractTypeRequired),
     salary: z.number().min(0, m.salaryNotNegative),
+    contractStartDate: z.string().trim().optional(),
+    contractEndDate: z.string().trim().optional(),
+    workingHours: z.number().min(0).max(168).optional(),
   });
 }

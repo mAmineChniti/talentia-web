@@ -19,6 +19,7 @@ const PROTECTED_PREFIXES = [
   '/payslips',
   '/trainings',
   '/recruitment',
+  '/admin',
 ];
 
 const VISITOR_PATHS = ['/login', '/register', '/forgot-password'];
@@ -35,6 +36,7 @@ const ROUTE_ROLES: Record<string, string[]> = {
   recruitment: ['HR', 'ADMIN'],
   candidates: ['HR', 'ADMIN', 'CANDIDATE'],
   forum: ['CANDIDATE', 'EMPLOYEE', 'HR', 'ADMIN'],
+  admin: ['ADMIN'],
 };
 
 function getLocale(request: NextRequest): Locale {

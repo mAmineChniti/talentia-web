@@ -38,6 +38,7 @@ import {
   ComboboxList,
 } from '@/components/ui/combobox';
 import { StatusBadge } from '@/components/status-badge';
+import { DatePicker } from '@/components/ui/date-picker';
 import { EmptyState, ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -650,6 +651,9 @@ function EmployeeForm({
           position: '',
           contractType: 'CDI',
           salary: 0,
+          contractStartDate: '',
+          contractEndDate: '',
+          workingHours: 40,
         },
   });
 
@@ -683,7 +687,13 @@ function EmployeeForm({
     if (initial) {
       updateMutation.mutate({ id: initial.id, body: values });
     } else {
-      createMutation.mutate(values);
+      // Empty date strings would break LocalDate parsing: omit them
+      const { contractStartDate, contractEndDate, ...rest } = values;
+      createMutation.mutate({
+        ...rest,
+        ...(contractStartDate && { contractStartDate }),
+        ...(contractEndDate && { contractEndDate }),
+      });
     }
   }
 
@@ -818,6 +828,67 @@ function EmployeeForm({
             )}
           />
         </div>
+
+        {!initial && (
+          <div className="bg-muted/30 space-y-4 rounded-xl border p-4">
+            <p className="text-sm font-medium">{t.contractSection}</p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Controller
+                control={form.control}
+                name="contractStartDate"
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>{t.contractStart}</FieldLabel>
+                    <DatePicker
+                      value={field.value ?? ''}
+                      onChange={(v) => field.onChange(v ?? '')}
+                    />
+                  </Field>
+                )}
+              />
+              <Controller
+                control={form.control}
+                name="contractEndDate"
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>{t.contractEnd}</FieldLabel>
+                    <DatePicker
+                      value={field.value ?? ''}
+                      onChange={(v) => field.onChange(v ?? '')}
+                    />
+                  </Field>
+                )}
+              />
+            </div>
+            <Controller
+              control={form.control}
+              name="workingHours"
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="employee-hours">
+                    {t.workingHours}
+                  </FieldLabel>
+                  <Input
+                    id="employee-hours"
+                    type="number"
+                    min="0"
+                    max="168"
+                    aria-invalid={fieldState.invalid}
+                    value={field.value ?? 40}
+                    onChange={(e) => {
+                      return field.onChange(
+                        e.target.value === '' ? 40 : e.target.valueAsNumber
+                      );
+                    }}
+                  />
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+          </div>
+        )}
       </FieldGroup>
 
       <DialogFooter className="pt-2">

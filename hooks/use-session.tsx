@@ -5,9 +5,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { usePathname, useRouter } from 'next/navigation';
 
+import { deleteSessionCookie, type SessionUser } from '@/actions/cookies';
+import { authApi } from '@/lib/services/auth';
 import { usersApi } from '@/lib/services/users';
 import type { User } from '@/lib/types/users';
-import type { SessionUser } from '@/actions/cookies';
 
 interface Session {
   userId: number | undefined;
@@ -52,6 +53,28 @@ export function SessionProvider({
         }
       : undefined,
   });
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const kickedRef = React.useRef(false);
+
+  // A banned user is signed out immediately, wherever they are: their
+  // account no longer exists as far as the app is concerned.
+  React.useEffect(() => {
+    if (kickedRef.current || userQuery.data?.banned !== true) return;
+    kickedRef.current = true;
+    void (async () => {
+      try {
+        await authApi.logout();
+      } catch {
+        // backend unreachable or session already gone: continue cleanup
+      }
+      await deleteSessionCookie();
+      await queryClient.invalidateQueries({ queryKey: [...SESSION_USER_KEY] });
+      const locale = pathname.split('/').find(Boolean);
+      router.replace(locale ? `/${locale}/login` : '/login');
+    })();
+  }, [userQuery.data?.banned, pathname, queryClient, router]);
 
   const isLoading = userId !== undefined && userQuery.isPending;
 

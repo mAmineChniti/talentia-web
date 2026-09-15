@@ -11,6 +11,7 @@ import {
   Users,
   GraduationCap,
   MessagesSquare,
+  ShieldCheck,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -108,6 +109,12 @@ export function AppSidebar() {
     {
       label: s.community,
       items: [{ title: s.forum, url: `/${lang}/forum`, icon: MessagesSquare }],
+    },
+    {
+      label: s.administration,
+      items: [
+        { title: s.users, url: `/${lang}/admin/users`, icon: ShieldCheck },
+      ],
     },
   ];
 

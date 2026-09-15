@@ -1,4 +1,4 @@
-import type { User } from '@/lib/types/users';
+import type { RoleChangeProvisioning, User } from '@/lib/types/users';
 
 import { request } from './http';
 
@@ -24,4 +24,16 @@ export const usersApi = {
     return request<User>(`/users/${id}/photo`, { method: 'POST', body: form });
   },
   remove: (id: number) => request<string>(`/users/${id}`, { method: 'DELETE' }),
+  changeRole: (
+    id: number,
+    role: User['role'],
+    provisioning?: RoleChangeProvisioning
+  ) =>
+    request<User>(`/users/${id}/role`, {
+      method: 'PUT',
+      searchParams: { role },
+      ...(provisioning && { json: provisioning }),
+    }),
+  ban: (id: number) => request<User>(`/users/${id}/ban`, { method: 'PUT' }),
+  unban: (id: number) => request<User>(`/users/${id}/unban`, { method: 'PUT' }),
 };
