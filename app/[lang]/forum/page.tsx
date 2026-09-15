@@ -227,7 +227,11 @@ export default function ForumPage() {
   }, [posts]);
 
   const filteredPosts = React.useMemo(() => {
-    let result = sortedPosts;
+    // Defense in depth: never render posts of banned users, even if the
+    // backend still returns them (e.g. backend not redeployed yet).
+    let result = sortedPosts.filter(
+      (p) => userMap.get(p.auteurId)?.banned !== true
+    );
 
     result =
       activeFilter === 'ALL'
@@ -252,7 +256,7 @@ export default function ForumPage() {
     }
 
     return result;
-  }, [sortedPosts, activeFilter, dateFilter]);
+  }, [sortedPosts, activeFilter, dateFilter, userMap]);
 
   return (
     <div className="grid gap-6">

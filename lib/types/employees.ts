@@ -6,6 +6,10 @@ export interface EmployeeRequest {
   position: string;
   contractType: string;
   salary: number;
+  // Initial contract, created with the employee record
+  contractStartDate?: string;
+  contractEndDate?: string;
+  workingHours?: number;
 }
 
 export interface EmployeeResponse {

@@ -20,6 +20,7 @@ const ROUTE_ROLES: Record<string, Role[]> = {
   candidates: ['HR', 'ADMIN', 'CANDIDATE'],
   forum: ['CANDIDATE', 'EMPLOYEE', 'HR', 'ADMIN'],
   profile: ['CANDIDATE', 'EMPLOYEE', 'HR', 'ADMIN'],
+  admin: ['ADMIN'],
 };
 
 export function canAccessRoute(

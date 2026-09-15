@@ -1,5 +1,18 @@
 export type Role = 'CANDIDATE' | 'EMPLOYEE' | 'HR' | 'ADMIN';
 
+// Hiring details sent when promoting a user with no employee record yet.
+// The backend creates the employee file (QR + welcome email) and an
+// active contract from these.
+export interface RoleChangeProvisioning {
+  department?: string;
+  position?: string;
+  contractType?: string;
+  salary?: number;
+  contractStartDate?: string;
+  contractEndDate?: string;
+  workingHours?: number;
+}
+
 // entity/users.java
 export interface User {
   id: number;
@@ -8,6 +21,7 @@ export interface User {
   email: string;
   password?: string;
   role: Role;
+  banned?: boolean;
   city?: string;
   country?: string;
   profileImageUrl?: string;
