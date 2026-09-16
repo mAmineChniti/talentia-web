@@ -91,7 +91,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
   Select,
@@ -379,7 +378,9 @@ function PostCard({
   const { dict } = useI18n();
   const t = dict.forum;
   const { user } = useSession({ redirectToLoginOnMissing: false });
-  const canModerate = hasMinimumRole(user?.role, 'HR');
+  // HR and ADMIN can moderate (delete) any post; authors can delete theirs.
+  const canModerate =
+    user?.role === 'ADMIN' || hasMinimumRole(user?.role, 'HR');
   const canDelete = canModerate || post.auteurId === user?.id;
   const [showComments, setShowComments] = React.useState(true);
   const [showApplicants, setShowApplicants] = React.useState(false);
@@ -473,7 +474,7 @@ function PostCard({
           </div>
         )}
       </CardContent>
-      <CardFooter className="bg-muted/30 justify-center gap-2 border-t px-6 py-3">
+      <CardFooter className="bg-muted/30 flex-wrap justify-center gap-2 border-t px-6 py-3">
         <Button
           variant="ghost"
           size="sm"
@@ -962,21 +963,62 @@ function DeletePostDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-destructive"
-          />
-        }
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-muted-foreground hover:text-destructive gap-2"
+        onClick={() => setOpen(true)}
       >
         <Trash2 className="size-4" /> {t.delete}
-      </AlertDialogTrigger>
+      </Button>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t.deletePostTitle}</AlertDialogTitle>
           <AlertDialogDescription>{t.deletePostDesc}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              onConfirm();
+              setOpen(false);
+            }}
+            disabled={pending}
+            className="bg-destructive hover:bg-destructive/90 text-white"
+          >
+            {t.delete}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function DeleteCommentDialog({
+  onConfirm,
+  pending,
+}: {
+  onConfirm: () => void;
+  pending: boolean;
+}) {
+  const { dict } = useI18n();
+  const t = dict.forum;
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-muted-foreground hover:text-destructive size-7"
+        onClick={() => setOpen(true)}
+      >
+        <Trash2 className="size-3.5" />
+      </Button>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t.deleteCommentTitle}</AlertDialogTitle>
+          <AlertDialogDescription>{t.deleteCommentDesc}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
@@ -1208,7 +1250,9 @@ function CommentsList({ postId }: { postId: number }) {
   const { dict } = useI18n();
   const t = dict.forum;
   const { user } = useSession({ redirectToLoginOnMissing: false });
-  const canModerate = hasMinimumRole(user?.role, 'HR');
+  // HR and ADMIN can moderate (delete) any comment; authors can delete theirs.
+  const canModerate =
+    user?.role === 'ADMIN' || hasMinimumRole(user?.role, 'HR');
   const [text, setText] = React.useState('');
   const [showAll, setShowAll] = React.useState(false);
 
@@ -1319,15 +1363,10 @@ function CommentsList({ postId }: { postId: number }) {
                   </p>
                 </div>
                 {canDelete && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-destructive size-7"
-                    onClick={() => deleteMutation.mutate(comment.id)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </Button>
+                  <DeleteCommentDialog
+                    onConfirm={() => deleteMutation.mutate(comment.id)}
+                    pending={deleteMutation.isPending}
+                  />
                 )}
               </div>
             );
