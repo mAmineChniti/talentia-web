@@ -955,6 +955,8 @@
     "addComment": "Comment",
     "posting": "Posting…",
     "successCommented": "Comment added",
+    "deleteCommentTitle": "Delete comment",
+    "deleteCommentDesc": "This comment will be removed permanently.",
     "commentDeleted": "Comment deleted",
     "emptyTitle": "No posts yet",
     "emptyDesc": "Be the first to share something with the team.",

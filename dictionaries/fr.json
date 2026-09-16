@@ -955,6 +955,8 @@
     "addComment": "Commenter",
     "posting": "Envoi…",
     "successCommented": "Commentaire ajouté",
+    "deleteCommentTitle": "Supprimer le commentaire",
+    "deleteCommentDesc": "Ce commentaire sera supprimé définitivement.",
     "commentDeleted": "Commentaire supprimé",
     "emptyTitle": "Aucun post",
     "emptyDesc": "Soyez le premier à partager quelque chose avec l'équipe.",

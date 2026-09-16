@@ -955,6 +955,8 @@
     "addComment": "تعليق",
     "posting": "جارٍ الإرسال…",
     "successCommented": "تمت إضافة التعليق",
+    "deleteCommentTitle": "حذف التعليق",
+    "deleteCommentDesc": "سيتم حذف هذا التعليق نهائيًا.",
     "commentDeleted": "تم حذف التعليق",
     "emptyTitle": "لا توجد منشورات",
     "emptyDesc": "كن أول من يشارك شيئًا مع الفريق.",
